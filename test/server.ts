@@ -23,8 +23,11 @@ it("contains spec with an expectation", async () => {
   createServerConnection(input, output);
   const client = createConnection(output, input);
   client.listen();
-  client.sendRequest(InitializeRequest.type.method, {
-    workspaceFolders: ["file:///home/user/project"],
-    workspace: {}
+  const { capabilities } = await client.sendRequest(InitializeRequest.type, {
+    workspaceFolders: [{ uri: "file:///", name: "" }],
+    rootUri: "file:///",
+    processId: 0,
+    capabilities: {},
   });
+  expect(capabilities).toEqual({});
 });
