@@ -5,6 +5,7 @@ import {
   createConnection,
   DidChangeConfigurationNotification,
   InitializeRequest,
+  InitializeResult,
 } from "vscode-languageserver/node";
 import { createServer } from "../src";
 
@@ -30,13 +31,16 @@ describe("server", () => {
     client = createConnection(output, input);
     client.listen();
 
-    const result = await client.sendRequest(InitializeRequest.type.method, {
-      workspaceFolders: [
-        { uri: "file://" + console.log(join(__dirname, "..")) },
-      ],
-      capabilities: {},
-    });
-    expect(result).toEqual({ capabilities: { textDocumentSync: 1 } });
+    const { capabilities } = await client.sendRequest<InitializeResult>(
+      InitializeRequest.type.method,
+      {
+        capabilities: {},
+        workspaceFolders: [
+          { uri: "file://" + console.log(join(__dirname, "..")) },
+        ],
+      }
+    );
+    expect(capabilities).toBeTruthy();
 
     client.sendNotification(DidChangeConfigurationNotification.type, {
       settings: { solidity: { includePath: "node_modules" } },
