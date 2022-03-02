@@ -3,12 +3,12 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Connection,
   createConnection,
-  InitializeRequest,
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
+import { parseAstOutput } from "./utils";
 
-export function createServerConnection(
+export function createServer(
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream
 ) {
@@ -22,22 +22,37 @@ export function createServerConnection(
     connection = createConnection();
   }
 
-  const documents = new TextDocuments(TextDocument);
-  documents.onDidOpen(({ document }) => {
+  function compile(document: TextDocument) {
     const { path } = URI.parse(document.uri);
-    exec(
-      `solc ${path} --base-path ${basePath} --include-path ${options.includePath} --ast-compact-json`,
-      (_, stdout) => {
-        console.log(stdout);
-      }
-    );
+    return new Promise<any[]>((resolve, reject) => {
+      exec(
+        `solc ${path} --base-path ${basePath} --include-path ${options.includePath} --ast-compact-json`,
+        (_, stdout, stderr) => {
+          if (stderr) {
+            reject(stderr);
+          } else {
+            resolve(parseAstOutput(stdout));
+          }
+        }
+      );
+    });
+  }
+
+  const documents = new TextDocuments(TextDocument);
+  documents.onDidChangeContent(async ({ document }) => {
+    const files = await compile(document);
+    console.log(files);
   });
 
   connection.onDidChangeConfiguration(({ settings: { solidity } }) => {
     options = solidity;
   });
 
-  connection.onRequest(InitializeRequest.type, ({ workspaceFolders }) => {
+  connection.onHover(() => {
+    return { contents: [{ language: "solidity", value: "Hello World" }] };
+  });
+
+  connection.onInitialize(({ workspaceFolders }) => {
     basePath = URI.parse(workspaceFolders![0].uri).path;
     return { capabilities: {} };
   });
@@ -48,5 +63,5 @@ export function createServerConnection(
 }
 
 if (require.main == module) {
-  createServerConnection();
+  createServer();
 }

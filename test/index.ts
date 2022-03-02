@@ -1,1 +1,2 @@
-import "./server";
+import "./server.test";
+import "./utils.test";
