@@ -3,6 +3,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Connection,
   createConnection,
+  MessageType,
+  ShowMessageRequest,
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -24,12 +26,16 @@ export function createServer(
 
   function compile(document: TextDocument) {
     const { path } = URI.parse(document.uri);
-    return new Promise<any[]>((resolve, reject) => {
+    return new Promise<any[]>((resolve) => {
       exec(
         `solc ${path} --base-path ${basePath} --include-path ${options.includePath} --ast-compact-json`,
         (_, stdout, stderr) => {
           if (stderr) {
-            reject(stderr);
+            // connection.sendRequest(ShowMessageRequest.type, {
+            //   type: MessageType.Error,
+            //   message: stderr,
+            // });
+            resolve([]);
           } else {
             resolve(parseAstOutput(stdout));
           }
@@ -41,7 +47,8 @@ export function createServer(
   const documents = new TextDocuments(TextDocument);
   documents.onDidChangeContent(async ({ document }) => {
     const files = await compile(document);
-    console.log(files);
+    if (files.length) {
+    }
   });
 
   connection.onDidChangeConfiguration(({ settings: { solidity } }) => {
