@@ -1,35 +1,31 @@
-import { parseAstOutput } from "../src/utils";
+import { exec } from "child_process";
+import { join } from "path/posix";
+import { DiagnosticSeverity } from "vscode-languageserver";
+import { parseAstOutput, parseCompileOutput } from "../src/utils";
 
 describe("utils", () => {
-  it("parseAstOutput()", () => {
-    const result = parseAstOutput(`JSON AST (compact format):
+  it("parseAstOutput()", (done) => {
+    const file = join(__dirname, "..", "test", "contracts", "basic.sol");
+    exec("solc --ast-compact-json " + file, (_, stdout) => {
+      const [ast] = parseAstOutput(stdout);
+      expect(ast.nodeType).toEqual("SourceUnit");
+      done();
+    });
+  });
 
-
-======= home/i/Projects/solidity-language-server/test/contracts/simple.sol =======
-{
-  "absolutePath": "home/i/Projects/solidity-language-server/test/contracts/simple.sol",
-  "exportedSymbols": {},
-  "id": 2,
-  "license": "MIT",
-  "nodeType": "SourceUnit",
-  "nodes":
-  [
-    {
-      "id": 1,
-      "literals":
-      [
-        "solidity",
-        "^",
-        "0.8",
-        ".0"
-      ],
-      "nodeType": "PragmaDirective",
-      "src": "32:23:0"
-    }
-  ],
-  "src": "32:24:0"
-}`);
-    console.log(result);
-    expect(result.length > 0);
+  it("parseCompileOutput()", (done) => {
+    const file = join(__dirname, "..", "test", "contracts", "with-warning.sol");
+    exec("solc " + file, (_, __, stderr) => {
+      const diagnostics = parseCompileOutput(stderr);
+      expect(diagnostics[1]).toEqual({
+        severity: DiagnosticSeverity.Warning,
+        range: {
+          start: { line: 4, character: 4 },
+          end: { line: 4, character: 5 },
+        },
+        message: "Unused local variable.",
+      });
+      done();
+    });
   });
 });

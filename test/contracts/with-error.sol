@@ -2,5 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract Basic {
-  function f() {}
+  function f() {
+    a();
+  }
 }

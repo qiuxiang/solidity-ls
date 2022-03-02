@@ -8,7 +8,7 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
-import { parseAstOutput } from "./utils";
+import { parseAstOutput, parseCompileOutput } from "./utils";
 
 export function createServer(
   input?: NodeJS.ReadableStream,
@@ -31,10 +31,15 @@ export function createServer(
         `solc ${path} --base-path ${basePath} --include-path ${options.includePath} --ast-compact-json`,
         (_, stdout, stderr) => {
           if (stderr) {
-            // connection.sendRequest(ShowMessageRequest.type, {
-            //   type: MessageType.Error,
-            //   message: stderr,
-            // });
+            const diagnostics = parseCompileOutput(stderr);
+            if (diagnostics.length) {
+              connection.sendDiagnostics({ uri: document.uri, diagnostics });
+            } else {
+              connection.sendRequest(ShowMessageRequest.type, {
+                type: MessageType.Error,
+                message: stderr,
+              });
+            }
             resolve([]);
           } else {
             resolve(parseAstOutput(stdout));
@@ -61,7 +66,11 @@ export function createServer(
 
   connection.onInitialize(({ workspaceFolders }) => {
     basePath = URI.parse(workspaceFolders![0].uri).path;
-    return { capabilities: {} };
+    return {
+      capabilities: {
+        hoverProvider: true,
+      },
+    };
   });
 
   documents.listen(connection);
