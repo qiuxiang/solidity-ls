@@ -3,6 +3,7 @@ import {
   DiagnosticSeverity,
   Range,
 } from "vscode-languageserver/node";
+import { spawn } from "child_process";
 
 export function parseAstOutput(stdout: string) {
   let json = false;
@@ -40,4 +41,8 @@ export function parseCompileOutput(stderr: string) {
     }
   }
   return diagnostics;
+}
+
+export function compile(source: string) {
+  spawn("solc");
 }

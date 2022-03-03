@@ -1,12 +1,12 @@
 import { exec } from "child_process";
-import { join } from "path/posix";
 import { DiagnosticSeverity } from "vscode-languageserver";
 import { parseAstOutput, parseCompileOutput } from "../src/utils";
+import { getTestContractPath } from "./utils";
 
 describe("utils", () => {
   it("parseAstOutput()", (done) => {
-    const file = join(__dirname, "..", "test", "contracts", "basic.sol");
-    exec("solc --ast-compact-json " + file, (_, stdout) => {
+    const path = getTestContractPath("basic.sol");
+    exec("solc --ast-compact-json " + path, (_, stdout) => {
       const [ast] = parseAstOutput(stdout);
       expect(ast.nodeType).toEqual("SourceUnit");
       done();
@@ -14,8 +14,8 @@ describe("utils", () => {
   });
 
   it("parseCompileOutput()", (done) => {
-    const file = join(__dirname, "..", "test", "contracts", "with-warning.sol");
-    exec("solc " + file, (_, __, stderr) => {
+    const path = getTestContractPath("with-warning.sol");
+    exec("solc " + path, (_, __, stderr) => {
       const diagnostics = parseCompileOutput(stderr);
       expect(diagnostics[1]).toEqual({
         severity: DiagnosticSeverity.Warning,

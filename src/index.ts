@@ -8,16 +8,19 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
+import { format } from "./format";
 import { parseAstOutput, parseCompileOutput } from "./utils";
+
+export let options: any;
+export let rootPath: string;
+export let extensionPath: string;
+export let connection: Connection;
+export let documents: TextDocuments<TextDocument>;
 
 export function createServer(
   input?: NodeJS.ReadableStream,
   output?: NodeJS.WritableStream
 ) {
-  let options: any;
-  let basePath: string;
-  let connection: Connection;
-
   if (input && output) {
     connection = createConnection(input, output);
   } else {
@@ -28,7 +31,7 @@ export function createServer(
     const { path } = URI.parse(document.uri);
     return new Promise<any[]>((resolve) => {
       exec(
-        `solc ${path} --base-path ${basePath} --include-path ${options.includePath} --ast-compact-json`,
+        `solc ${path} --base-path ${rootPath} --include-path ${options.includePath} --ast-compact-json`,
         (_, stdout, stderr) => {
           if (stderr) {
             const diagnostics = parseCompileOutput(stderr);
@@ -49,7 +52,7 @@ export function createServer(
     });
   }
 
-  const documents = new TextDocuments(TextDocument);
+  documents = new TextDocuments(TextDocument);
   documents.onDidChangeContent(async ({ document }) => {
     const files = await compile(document);
     if (files.length) {
@@ -64,11 +67,15 @@ export function createServer(
     return { contents: [{ language: "solidity", value: "Hello World" }] };
   });
 
-  connection.onInitialize(({ workspaceFolders }) => {
-    basePath = URI.parse(workspaceFolders![0].uri).path;
+  connection.onDocumentFormatting(format);
+
+  connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
+    rootPath = URI.parse(workspaceFolders![0].uri).path;
+    extensionPath = initializationOptions.extensionPath;
     return {
       capabilities: {
         hoverProvider: true,
+        documentFormattingProvider: true,
       },
     };
   });
