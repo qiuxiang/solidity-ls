@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 import { DiagnosticSeverity } from "vscode-languageserver";
-import { parseAstOutput, parseCompileOutput } from "../src/utils";
-import { getTestContractPath } from "./utils";
+import { compile, parseAstOutput, parseCompileOutput } from "../src/utils";
+import { getTestContractDocument, getTestContractPath } from "./utils";
 
 describe("utils", () => {
   it("parseAstOutput()", (done) => {
@@ -27,5 +27,10 @@ describe("utils", () => {
       });
       done();
     });
+  });
+
+  it("compile()", async () => {
+    console.log(await compile(getTestContractDocument("basic.sol")));
+    console.log(await compile(getTestContractDocument("with-error.sol")));
   });
 });

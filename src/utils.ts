@@ -4,6 +4,7 @@ import {
   Range,
 } from "vscode-languageserver/node";
 import { spawn } from "child_process";
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 export function parseAstOutput(stdout: string) {
   let json = false;
@@ -43,6 +44,23 @@ export function parseCompileOutput(stderr: string) {
   return diagnostics;
 }
 
-export function compile(source: string) {
-  spawn("solc");
+export function compile(document: TextDocument) {
+  return new Promise((resolve) => {
+    const child = spawn("solc", ["-", "--standard-json"]);
+    child.stdout.on("data", (data) => {
+      const { sources, errors } = JSON.parse(data.toString());
+      resolve(sources);
+      if (errors) {
+        console.log(errors);
+      }
+    });
+    child.stdin.write(
+      JSON.stringify({
+        language: "Solidity",
+        sources: { [document.uri]: { content: document.getText() } },
+        settings: { outputSelection: { "*": { "": ["ast"] } } },
+      })
+    );
+    child.stdin.end();
+  });
 }

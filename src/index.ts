@@ -11,8 +11,8 @@ import { URI } from "vscode-uri";
 import { format } from "./format";
 import { parseAstOutput, parseCompileOutput } from "./utils";
 
-export let options: any;
-export let rootPath: string;
+export let options = { includePath: "." };
+export let rootPath = ".";
 export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
