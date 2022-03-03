@@ -1,17 +1,15 @@
-import { exec } from "child_process";
+import { join } from "path";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Connection,
   createConnection,
-  MessageType,
-  ShowMessageRequest,
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import { format } from "./format";
-import { parseAstOutput, parseCompileOutput } from "./utils";
+import { compile } from "./utils";
 
-export let options = { includePath: "." };
+export let options = { includePath: join(__dirname, "..", "node_modules") };
 export let rootPath = ".";
 export let extensionPath: string;
 export let connection: Connection;
@@ -27,36 +25,9 @@ export function createServer(
     connection = createConnection();
   }
 
-  function compile(document: TextDocument) {
-    const { path } = URI.parse(document.uri);
-    return new Promise<any[]>((resolve) => {
-      exec(
-        `solc ${path} --base-path ${rootPath} --include-path ${options.includePath} --ast-compact-json`,
-        (_, stdout, stderr) => {
-          if (stderr) {
-            const diagnostics = parseCompileOutput(stderr);
-            if (diagnostics.length) {
-              connection.sendDiagnostics({ uri: document.uri, diagnostics });
-            } else {
-              connection.sendRequest(ShowMessageRequest.type, {
-                type: MessageType.Error,
-                message: stderr,
-              });
-            }
-            resolve([]);
-          } else {
-            resolve(parseAstOutput(stdout));
-          }
-        }
-      );
-    });
-  }
-
   documents = new TextDocuments(TextDocument);
   documents.onDidChangeContent(async ({ document }) => {
-    const files = await compile(document);
-    if (files.length) {
-    }
+    await compile(document);
   });
 
   connection.onDidChangeConfiguration(({ settings: { solidity } }) => {

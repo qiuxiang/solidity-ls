@@ -10,7 +10,7 @@ export function getTestContractPath(name: string) {
   return join(__dirname, "..", "test", "contracts", name);
 }
 
-export function getTestContractDocument(name: string) {
+export function getTestContract(name: string) {
   const path = getTestContractPath(name);
   const text = readFileSync(path).toString();
   return TextDocument.create("file://" + path, "solidity", 0, text);

@@ -1,4 +1,3 @@
-import { readFileSync } from "fs";
 import { join } from "path/posix";
 import { Duplex } from "stream";
 import {
@@ -15,9 +14,8 @@ import {
   PublishDiagnosticsNotification,
   TextDocumentItem,
 } from "vscode-languageserver/node";
-import { URI } from "vscode-uri";
 import { createServer } from "../src";
-import { getTestContractPath, getTestContractUri } from "./utils";
+import { getTestContract, getTestContractUri } from "./utils";
 
 class Stream extends Duplex {
   _write(chunk: string, _: string, done: () => void) {
@@ -57,7 +55,7 @@ describe("server", () => {
   });
 
   it("diagnostics", (done) => {
-    openTextDocument(getTestContractUri("with-error.sol"));
+    openTextDocument("with-error.sol");
     client.onNotification(
       PublishDiagnosticsNotification.type,
       ({ diagnostics }) => {
@@ -83,24 +81,23 @@ describe("server", () => {
   });
 
   it("format", async () => {
-    const uri = getTestContractUri("unformatted.sol");
-    openTextDocument(uri);
+    const document = openTextDocument("unformatted.sol");
     const [{ newText }] = await client.sendRequest(
       DocumentFormattingRequest.type,
       {
-        textDocument: { uri },
+        textDocument: { uri: document.uri },
         options: FormattingOptions.create(2, true),
       }
     );
-    expect(newText).toEqual(
-      readFileSync(getTestContractPath("formatted.sol")).toString()
-    );
+    expect(newText).toEqual(getTestContract("formatted.sol").getText());
   });
 
-  function openTextDocument(uri: string) {
-    const text = readFileSync(URI.parse(uri).path).toString();
+  function openTextDocument(name: string) {
+    const document = getTestContract(name);
+    const text = document.getText();
     client.sendNotification(DidOpenTextDocumentNotification.type, {
-      textDocument: TextDocumentItem.create(uri, "solidity", 0, text),
+      textDocument: TextDocumentItem.create(document.uri, "solidity", 0, text),
     });
+    return document;
   }
 });
