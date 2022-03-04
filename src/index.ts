@@ -27,7 +27,8 @@ export function createServer(
 
   documents = new TextDocuments(TextDocument);
   documents.onDidChangeContent(async ({ document }) => {
-    await compile(document);
+    const sources = await compile(document);
+    setTimeout(() => require("prettier"), 0);
   });
 
   connection.onDidChangeConfiguration(({ settings: { solidity } }) => {

@@ -17,7 +17,6 @@ export function format({
     pluginPath = join(extensionPath, "..", pluginName);
   }
   const { format, resolveConfig } = require("prettier");
-  document.getText;
   const formatted = format(document.getText(), {
     parser: "solidity-parse",
     plugins: [pluginPath],
