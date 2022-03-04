@@ -7,7 +7,7 @@ import {
 } from "vscode-languageserver";
 import { documents, extensionPath } from ".";
 
-export function format({
+export function onFormatting({
   textDocument: { uri },
 }: DocumentFormattingParams): TextEdit[] {
   const document = documents.get(uri);

@@ -55,3 +55,5 @@ export function compile(document: TextDocument) {
     child.stdin.end();
   });
 }
+
+export function parseAst(ast: any) {}

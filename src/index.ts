@@ -6,7 +6,8 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
-import { format } from "./format";
+import { onDefinition } from "./definition";
+import { onFormatting } from "./formatting";
 import { compile } from "./utils";
 
 export let options = { includePath: join(__dirname, "..", "node_modules") };
@@ -39,7 +40,8 @@ export function createServer(
     return { contents: [{ language: "solidity", value: "Hello World" }] };
   });
 
-  connection.onDocumentFormatting(format);
+  connection.onDocumentFormatting(onFormatting);
+  connection.onDefinition(onDefinition);
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
     rootPath = URI.parse(workspaceFolders![0].uri).path;
@@ -48,6 +50,7 @@ export function createServer(
       capabilities: {
         hoverProvider: true,
         documentFormattingProvider: true,
+        definitionProvider: true,
       },
     };
   });
