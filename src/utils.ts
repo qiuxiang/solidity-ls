@@ -73,8 +73,6 @@ export function parseAst(ast: any) {
   }
 }
 
-export type AstParseResult = ReturnType<typeof parseAst>;
-
 export function parseAstItem(
   node: AstNode,
   root: AstNode,
@@ -148,7 +146,10 @@ export function parseAstItem(
       ];
       break;
     case "VariableDeclarationStatement":
-      children = [...node.declarations, node.initialValue];
+      children = node.declarations;
+      if (node.initialValue) {
+        children.push(node.initialValue);
+      }
       break;
     case "BinaryOperation":
       children = [node.leftExpression, node.rightExpression];

@@ -11,9 +11,12 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
   if (node.nodeType == "VariableDeclaration") {
     contents.push(createContent(getVariableDeclaration(node)));
   } else if (node.nodeType == "StructDefinition") {
-    // const { parameters, returnParameters } = node;
+    contents.push(createContent(getStructDefinition(node)));
   } else if (node.nodeType == "FunctionDefinition") {
-    // const { parameters, returnParameters } = node;
+    contents.push(createContent(getFunctionDefinition(node)));
+  }
+  if (node.parent.nodeType == "StructDefinition") {
+    contents.push(createContent(`struct ${node.parent.name}`));
   }
   if (node.documentation) {
     contents.push(createContent(node.documentation.text));
@@ -50,4 +53,32 @@ function getVariableDeclaration(node: any) {
     declaration = `(member) ${declaration}`;
   }
   return `${declaration} ${node.name}`;
+}
+
+function getStructDefinition(node: any) {
+  let value = `struct ${node.name} {\n`;
+  for (const member of node.members) {
+    value += `  ${getVariableDeclaration(member)};\n`;
+  }
+  value += "}";
+  return value;
+}
+
+function getFunctionDefinition(node: any) {
+  let value = `function ${node.name}(`;
+  value += node.parameters.parameters
+    .map((param: any) => getVariableDeclaration(param))
+    .join(", ");
+  value += `) ${node.visibility}`;
+  if (node.stateMutability != "nonpayable") {
+    value += ` ${node.stateMutability}`;
+  }
+  if (node.returnParameters.parameters.length) {
+    value += ` returns (`;
+    value += node.returnParameters.parameters
+      .map((param: any) => getVariableDeclaration(param))
+      .join(", ");
+    value += `)`;
+  }
+  return value;
 }

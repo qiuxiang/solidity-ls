@@ -15,14 +15,12 @@ describe("utils", () => {
     writeFileSync("dist/ast.json", JSON.stringify(ast));
     parseAst(ast);
     console.log(
-      identifierMap
-        .get(document.uri)
-        ?.map((i) => [i.position[0], i.nodeType, i.name])
+      identifierMap.get(document.uri)?.map((i) => [i.start, i.nodeType, i.name])
     );
     console.log(
       symbolMap
         .get(document.uri)
-        ?.map((i) => [i.position[0], i.nodeType, i.name ?? i.memberName])
+        ?.map((i) => [i.start, i.nodeType, i.name ?? i.memberName])
     );
   });
 });
