@@ -3,17 +3,18 @@ pragma solidity >=0.7.0 <0.9.0;
 
 /// @title Voting with delegation.
 contract Ballot {
-  // This declares a new complex type which will
-  // be used for variables later.
-  // It will represent a single voter.
+  /// This declares a new complex type which will
+  /// be used for variables later.
+  /// It will represent a single voter.
   struct Voter {
-    uint256 weight; // weight is accumulated by delegation
+    /// weight is accumulated by delegation
+    uint256 weight;
     bool voted; // if true, that person already voted
     address delegate; // person delegated to
     uint256 vote; // index of the voted proposal
   }
 
-  // This is a type for a single proposal.
+  /// This is a type for a single proposal.
   struct Proposal {
     bytes32 name; // short name (up to 32 bytes)
     uint256 voteCount; // number of accumulated votes
@@ -21,11 +22,11 @@ contract Ballot {
 
   address public chairperson;
 
-  // This declares a state variable that
-  // stores a `Voter` struct for each possible address.
+  /// This declares a state variable that
+  /// stores a `Voter` struct for each possible address.
   mapping(address => Voter) public voters;
 
-  // A dynamically-sized array of `Proposal` structs.
+  /// A dynamically-sized array of `Proposal` structs.
   Proposal[] public proposals;
 
   /// Create a new ballot to choose one of `proposalNames`.
@@ -44,8 +45,8 @@ contract Ballot {
     }
   }
 
-  // Give `voter` the right to vote on this ballot.
-  // May only be called by `chairperson`.
+  /// Give `voter` the right to vote on this ballot.
+  /// May only be called by `chairperson`.
   function giveRightToVote(address voter) external {
     // If the first argument of `require` evaluates
     // to `false`, execution terminates and all
@@ -68,7 +69,7 @@ contract Ballot {
 
   /// Delegate your vote to the voter `to`.
   function delegate(address to) external {
-    // assigns reference
+    /// assigns reference
     Voter storage sender = voters[msg.sender];
     require(!sender.voted, "You already voted.");
 
@@ -89,8 +90,8 @@ contract Ballot {
       require(to != msg.sender, "Found loop in delegation.");
     }
 
-    // Since `sender` is a reference, this
-    // modifies `voters[msg.sender].voted`
+    /// Since `sender` is a reference, this
+    /// modifies `voters[msg.sender].voted`
     Voter storage delegate_ = voters[to];
 
     // Voters cannot delegate to wallets that cannot vote.
@@ -135,9 +136,9 @@ contract Ballot {
     }
   }
 
-  // Calls winningProposal() function to get the index
-  // of the winner contained in the proposals array and then
-  // returns the name of the winner
+  /// Calls winningProposal() function to get the index
+  /// of the winner contained in the proposals array and then
+  /// returns the name of the winner
   function winnerName() external view returns (bytes32 winnerName_) {
     winnerName_ = proposals[winningProposal()].name;
   }

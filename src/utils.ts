@@ -5,7 +5,14 @@ import {
   DiagnosticSeverity,
   Range,
 } from "vscode-languageserver/node";
-import { connection, options, rootPath } from ".";
+import {
+  AstNode,
+  connection,
+  identifierMap,
+  nodeMap,
+  options,
+  symbolMap,
+} from ".";
 
 function toDiagnostics(errors: any[], document: TextDocument) {
   return errors.map((error) => {
@@ -27,7 +34,7 @@ export function compile(document: TextDocument) {
       "-",
       "--standard-json",
       "--base-path",
-      rootPath,
+      ".",
       "--include-path",
       options.includePath,
     ]);
@@ -56,4 +63,108 @@ export function compile(document: TextDocument) {
   });
 }
 
-export function parseAst(ast: any) {}
+export function parseAst(ast: any) {
+  for (const item of Object.values<any>(ast)) {
+    const root = item.ast;
+    const uri = root.absolutePath;
+    if (!identifierMap.has(uri)) identifierMap.set(uri, []);
+    if (!symbolMap.has(uri)) symbolMap.set(uri, []);
+    parseAstItem(root, root, identifierMap.get(uri)!, symbolMap.get(uri)!);
+  }
+}
+
+export type AstParseResult = ReturnType<typeof parseAst>;
+
+export function parseAstItem(
+  node: AstNode,
+  root: AstNode,
+  identifiers: AstNode[],
+  symbols: AstNode[]
+) {
+  node.root = root;
+  const position = node.src.split(":").map((i: string) => parseInt(i));
+  node.start = position[0];
+  node.end = position[0] + position[1];
+  nodeMap.set(node.id, node);
+  let children = [];
+  switch (node.nodeType) {
+    case "ContractDefinition":
+    case "StructDefinition":
+    case "FunctionDefinition":
+    case "VariableDeclaration":
+      identifiers.push(node);
+      break;
+    case "Identifier":
+    case "MemberAccess":
+      symbols.push(node);
+      break;
+    case "UserDefinedTypeName":
+      symbols.push(node);
+      break;
+  }
+  switch (node.nodeType) {
+    case "SourceUnit":
+    case "ContractDefinition":
+      children = node.nodes;
+      break;
+    case "StructDefinition":
+      children = node.members;
+      break;
+    case "FunctionDefinition":
+      children = [
+        ...node.parameters.parameters,
+        ...node.returnParameters.parameters,
+        ...node.body.statements,
+      ];
+      break;
+    case "ExpressionStatement":
+      children = [node.expression];
+      break;
+    case "Assignment":
+      children = [node.leftHandSide, node.rightHandSide];
+      break;
+    case "MemberAccess":
+      children = [node.expression];
+      break;
+    case "IndexAccess":
+      children = [node.baseExpression, node.indexExpression];
+      break;
+    case "ForStatement":
+      children = [
+        node.initializationExpression,
+        node.condition,
+        node.loopExpression,
+        ...node.body.statements,
+      ];
+      break;
+    case "WhileStatement":
+      children = [node.condition, ...node.body.statements];
+      break;
+    case "IfStatement":
+      children = [
+        node.condition,
+        ...node.trueBody.statements,
+        ...(node.falseBody?.statements ?? []),
+      ];
+      break;
+    case "VariableDeclarationStatement":
+      children = [...node.declarations, node.initialValue];
+      break;
+    case "BinaryOperation":
+      children = [node.leftExpression, node.rightExpression];
+      break;
+    case "FunctionCall":
+      children = [node.expression, ...node.arguments];
+      break;
+    case "UnaryOperation":
+      children = [node.subExpression];
+      break;
+    case "VariableDeclaration":
+      children = [node.typeName];
+      break;
+  }
+  for (const child of children) {
+    child.parent = node;
+    parseAstItem(child, root, identifiers, symbols);
+  }
+}

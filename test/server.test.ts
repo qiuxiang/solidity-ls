@@ -65,7 +65,11 @@ describe("server", () => {
             start: { line: 5, character: 2 },
             end: { line: 5, character: 3 },
           },
-          message: "Undeclared identifier.",
+          message: `DeclarationError: Undeclared identifier.
+  |
+6 |   a();
+  |   ^`,
+          code: "7576",
         });
         done();
       }
@@ -75,21 +79,20 @@ describe("server", () => {
   it("hover", async () => {
     const result = await client.sendRequest(HoverRequest.type, {
       textDocument: { uri: getTestContractUri("basic.sol") },
-      position: { line: 0, character: 0 },
+      position: { line: 33, character: 9 },
     });
     console.log(result);
   });
 
   it("format", async () => {
     const document = openTextDocument("unformatted.sol");
-    const [{ newText }] = await client.sendRequest(
-      DocumentFormattingRequest.type,
-      {
-        textDocument: { uri: document.uri },
-        options: FormattingOptions.create(2, true),
-      }
+    const result = await client.sendRequest(DocumentFormattingRequest.type, {
+      textDocument: { uri: document.uri },
+      options: FormattingOptions.create(2, true),
+    });
+    expect(result?.[0].newText).toEqual(
+      getTestContract("formatted.sol").getText()
     );
-    expect(newText).toEqual(getTestContract("formatted.sol").getText());
   });
 
   function openTextDocument(name: string) {

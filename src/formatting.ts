@@ -11,6 +11,7 @@ export function onFormatting({
   textDocument: { uri },
 }: DocumentFormattingParams): TextEdit[] {
   const document = documents.get(uri);
+  if (!document) return [];
   const pluginName = "prettier-plugin-solidity";
   let pluginPath = join(extensionPath, "node_modules", pluginName);
   if (!existsSync(pluginPath)) {
