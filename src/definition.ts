@@ -5,13 +5,17 @@ import {
   Range,
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { AstNode, documents, nodeMap, symbolMap } from ".";
+import { documents, nodeMap, symbolMap } from ".";
+import { AstNode } from "./parse";
 
 export function onDefinition({ textDocument, position }: DefinitionParams) {
   const document = documents.get(textDocument.uri);
   if (!document) return null;
   const node = getDefinition(document, position);
   if (!node) return [];
+  const path = node.root.absolutePath;
+  if (!path.startsWith("file://")) {
+  }
   return Location.create(
     textDocument.uri,
     Range.create(document.positionAt(node.start), document.positionAt(node.end))

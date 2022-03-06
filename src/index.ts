@@ -6,16 +6,14 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
+import { compile } from "./compile";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
-import { compile, parseAst } from "./utils";
+import { AstNode, parseAst } from "./parse";
 
-// @TODO: add types to this
-export type AstNode = any;
-
-export let options = { includePath: join(__dirname, "..", "node_modules") };
-export let rootPath = ".";
+export let options = { includePath: "node_modules" };
+export let rootPath = __dirname;
 export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
@@ -44,8 +42,9 @@ export function createServer(
   connection.onDefinition(onDefinition);
   connection.onHover(onHover);
 
-  connection.onDidChangeConfiguration(({ settings: { solidity } }) => {
+  connection.onDidChangeConfiguration(async ({ settings: { solidity } }) => {
     options = solidity;
+    options.includePath = join(rootPath, options.includePath);
   });
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {

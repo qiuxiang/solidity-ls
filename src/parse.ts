@@ -1,75 +1,14 @@
-import { spawn } from "child_process";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import {
-  Diagnostic,
-  DiagnosticSeverity,
-  Range,
-} from "vscode-languageserver/node";
-import {
-  AstNode,
-  connection,
-  identifierMap,
-  nodeMap,
-  options,
-  symbolMap,
-} from ".";
+import { identifierMap, nodeMap, symbolMap } from ".";
 
-function toDiagnostics(errors: any[], document: TextDocument) {
-  return errors.map((error) => {
-    const { start, end } = error.sourceLocation;
-    return Diagnostic.create(
-      Range.create(document.positionAt(start), document.positionAt(end)),
-      error.formattedMessage.replace(/.*-->.*\n/, "").replace(/\n\n/, ""),
-      error.severity == "error"
-        ? DiagnosticSeverity.Error
-        : DiagnosticSeverity.Warning,
-      error.errorCode
-    );
-  });
-}
+// @TODO: add types to this
+export type AstNode = any;
 
-export function compile(document: TextDocument) {
-  return new Promise((resolve) => {
-    const child = spawn("solc", [
-      "-",
-      "--standard-json",
-      "--base-path",
-      ".",
-      "--include-path",
-      options.includePath,
-    ]);
-    let data = "";
-    child.stdout.on("data", (buffer: Buffer) => (data += buffer.toString()));
-    child.stdout.on("end", () => {
-      const { sources, errors } = JSON.parse(data.toString());
-      resolve(sources);
-      if (errors) {
-        connection?.sendDiagnostics({
-          uri: document.uri,
-          diagnostics: toDiagnostics(errors, document),
-        });
-      } else {
-        connection?.sendDiagnostics({ uri: document.uri, diagnostics: [] });
-      }
-    });
-    child.stdin.write(
-      JSON.stringify({
-        language: "Solidity",
-        sources: { [document.uri]: { content: document.getText() } },
-        settings: { outputSelection: { "*": { "": ["ast"] } } },
-      })
-    );
-    child.stdin.end();
-  });
-}
-
-export function parseAst(ast: any) {
-  for (const item of Object.values<any>(ast)) {
-    const root = item.ast;
-    const uri = root.absolutePath;
+export function parseAst(files: any[]) {
+  for (const ast of files) {
+    const uri = ast.absolutePath;
     if (!identifierMap.has(uri)) identifierMap.set(uri, []);
     if (!symbolMap.has(uri)) symbolMap.set(uri, []);
-    parseAstItem(root, root, identifierMap.get(uri)!, symbolMap.get(uri)!);
+    parseAstItem(ast, ast, identifierMap.get(uri)!, symbolMap.get(uri)!);
   }
 }
 
@@ -112,7 +51,7 @@ export function parseAstItem(
       children = [
         ...node.parameters.parameters,
         ...node.returnParameters.parameters,
-        ...node.body.statements,
+        ...(node.body?.statements ?? []),
       ];
       break;
     case "ExpressionStatement":
@@ -165,6 +104,9 @@ export function parseAstItem(
       break;
   }
   for (const child of children) {
+    if (!child) {
+      debugger;
+    }
     child.parent = node;
     parseAstItem(child, root, identifiers, symbols);
   }
