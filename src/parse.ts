@@ -18,11 +18,11 @@ import {
 } from "solidity-ast";
 import { definitionMap, nodeMap } from ".";
 
-interface AstNodeData {
+export interface AstNodeData {
   root?: SourceUnit;
   parent?: AstNode;
-  start?: number;
-  end?: number;
+  srcStart?: number;
+  srcEnd?: number;
 }
 
 export type DefinitionNode = (
@@ -68,8 +68,8 @@ export function parseAstNode(
 ) {
   node.root = <SourceUnit>root;
   const position = node.src.split(":").map((i: string) => parseInt(i));
-  node.start = position[0];
-  node.end = position[0] + position[1];
+  node.srcStart = position[0];
+  node.srcEnd = position[0] + position[1];
   nodeMap.set(node.id, node);
   let children: (AstNode | null | undefined)[] = [];
   switch (node.nodeType) {

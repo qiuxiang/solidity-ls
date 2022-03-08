@@ -17,10 +17,10 @@ export function onDefinition({ textDocument, position }: DefinitionParams) {
   if (!path.startsWith("file://")) {
   }
   return Location.create(
-    textDocument.uri,
+    node.root!.absolutePath,
     Range.create(
-      document.positionAt(node.start!),
-      document.positionAt(node.end!)
+      document.positionAt(node.srcStart!),
+      document.positionAt(node.srcEnd!)
     )
   );
 }
@@ -34,7 +34,7 @@ export function getDefinition(
   if (!symbols) return null;
   for (let i = symbols.length - 1; i >= 0; i--) {
     const symbol = symbols[i];
-    const { start, end } = symbol;
+    const { srcStart: start, srcEnd: end } = symbol;
     if (start! <= offset && offset <= end!) {
       return <DefinitionNode>(
         nodeMap.get(Reflect.get(symbol, "referencedDeclaration"))

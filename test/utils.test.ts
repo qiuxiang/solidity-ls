@@ -16,13 +16,13 @@ describe("utils", () => {
     writeFileSync("dist/ast.json", JSON.stringify(ast));
     parseAst(ast);
     console.log(
-      definitionMap.get(document.uri)?.map((i) => [i.start, i.nodeType, i.name])
+      definitionMap.get(document.uri)?.map((i) => [i.srcStart, i.nodeType, i.name])
     );
     console.log(
       identifierMap
         .get(document.uri)
         ?.map((i) => [
-          i.start,
+          i.srcStart,
           i.nodeType,
           i.nodeType == "MemberAccess" ? i.memberName : i.name,
         ])

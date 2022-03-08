@@ -54,7 +54,7 @@ export function compile(document: TextDocument) {
 export function parseAstOutput(stdout: string, path: string) {
   const dir = dirname(path);
   let isJson = false;
-  const lines = [];
+  let lines = [];
   const files = [];
   for (const line of stdout.split("\n")) {
     if (line == "{") isJson = true;
@@ -74,6 +74,7 @@ export function parseAstOutput(stdout: string, path: string) {
       }
       json.absolutePath = "file://" + json.absolutePath;
       files.push(json);
+      lines = [];
     }
   }
   return files;

@@ -1,6 +1,8 @@
+import { TypeName, VariableDeclaration } from "solidity-ast";
 import { Hover, HoverParams } from "vscode-languageserver/node";
 import { documents } from ".";
 import { getDefinition } from "./definition";
+import { AstNodeData } from "./parse";
 
 export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const document = documents.get(textDocument.uri);
@@ -32,18 +34,10 @@ function createContent(value: string) {
   return { language: "solidity", value };
 }
 
-function getVariableDeclaration(node: any) {
-  let declaration = "";
+function getVariableDeclaration(node: VariableDeclaration & AstNodeData) {
   const { typeName } = node;
-  if (typeName.nodeType == "ElementaryTypeName") {
-    declaration = typeName.name;
-  } else if (typeName.nodeType == "ArrayTypeName") {
-    declaration = `${typeName.baseType.pathNode.name}[]`;
-  } else if (typeName.nodeType == "Mapping") {
-    declaration = `mapping(${typeName.keyType.name} => ${typeName.valueType.pathNode.name})`;
-  } else if (typeName.nodeType == "UserDefinedTypeName") {
-    declaration = typeName.pathNode.name;
-  }
+  if (!typeName) return "";
+  let declaration = getTypeName(typeName);
   if (node.storageLocation != "default") {
     declaration += ` ${node.storageLocation}`;
   }
@@ -53,10 +47,26 @@ function getVariableDeclaration(node: any) {
       declaration += " public";
     }
   }
-  if (node.parent.nodeType == "StructDefinition") {
+  if (node.parent!.nodeType == "StructDefinition") {
     declaration = `(member) ${declaration}`;
   }
   return `${declaration} ${node.name}`;
+}
+
+function getTypeName(type: TypeName): string {
+  switch (type.nodeType) {
+    case "ElementaryTypeName":
+      return `${type.name}`;
+    case "ArrayTypeName":
+      return `${getTypeName(type.baseType)}[]`;
+    case "Mapping":
+      const keyType = getTypeName(type.keyType);
+      return `mapping(${keyType} => ${getTypeName(type.valueType)})`;
+    case "UserDefinedTypeName":
+      return `${type.pathNode?.name}`;
+    default:
+      return "unknown";
+  }
 }
 
 function getStructDefinition(node: any) {
