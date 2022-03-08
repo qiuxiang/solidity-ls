@@ -1,8 +1,9 @@
 {
   "main": "dist/index.js",
   "scripts": {
-    "test": "esbuild --bundle --platform=node --external:prettier --sourcemap test/index.ts --outfile=dist/test.js && node node_modules/jasmine/bin/jasmine.js dist/test.js",
-    "build": "esbuild --bundle --platform=node --external:prettier src/index.ts --outdir=dist"
+    "esbuild": "esbuild --sourcemap --platform=node --bundle --external:./node_modules/* --outdir=dist",
+    "test": "npm run esbuild test/test.ts && node node_modules/jasmine/bin/jasmine.js dist/test.js",
+    "build": "npm run esbuild src/index.ts"
   },
   "dependencies": {
     "prettier": "^2.5.1",
@@ -16,7 +17,8 @@
     "@types/node": "^17.0.21",
     "esbuild": "^0.14.23",
     "jasmine": "^4.0.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.19"
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solidity-ast": "^0.4.30"
   },
   "prettier": {
     "tabWidth": 2

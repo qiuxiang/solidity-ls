@@ -1,42 +1,88 @@
-import { identifierMap, nodeMap, symbolMap } from ".";
+import {
+  Block,
+  ContractDefinition,
+  EnumDefinition,
+  ErrorDefinition,
+  Expression,
+  FunctionDefinition,
+  Identifier,
+  MemberAccess,
+  SourceUnit,
+  Statement,
+  StructDefinition,
+  TypeName,
+  UserDefinedTypeName,
+  UserDefinedValueTypeDefinition,
+  UsingForDirective,
+  VariableDeclaration,
+} from "solidity-ast";
+import { definitionMap, nodeMap } from ".";
 
-// @TODO: add types to this
-export type AstNode = any;
+interface AstNodeData {
+  root?: SourceUnit;
+  parent?: AstNode;
+  start?: number;
+  end?: number;
+}
 
-export function parseAst(files: any[]) {
+export type DefinitionNode = (
+  | ContractDefinition
+  | EnumDefinition
+  | ErrorDefinition
+  | FunctionDefinition
+  | StructDefinition
+  | UserDefinedValueTypeDefinition
+  | VariableDeclaration
+  | Exclude<ContractDefinition["nodes"][0], UsingForDirective>
+) &
+  AstNodeData;
+
+export type IdentifierNode = (Identifier | MemberAccess | UserDefinedTypeName) &
+  AstNodeData;
+
+export type AstNode = (
+  | Expression
+  | Statement
+  | SourceUnit
+  | DefinitionNode
+  | TypeName
+  | SourceUnit["nodes"][0]
+  | ContractDefinition["nodes"][0]
+) &
+  AstNodeData;
+
+export function parseAst(files: SourceUnit[]) {
   for (const ast of files) {
     const uri = ast.absolutePath;
-    if (!identifierMap.has(uri)) identifierMap.set(uri, []);
-    if (!symbolMap.has(uri)) symbolMap.set(uri, []);
-    parseAstItem(ast, ast, identifierMap.get(uri)!, symbolMap.get(uri)!);
+    if (!definitionMap.has(uri)) definitionMap.set(uri, []);
+    if (!definitionMap.has(uri)) definitionMap.set(uri, []);
+    parseAstNode(ast, ast, definitionMap.get(uri)!, definitionMap.get(uri)!);
   }
 }
 
-export function parseAstItem(
+export function parseAstNode(
   node: AstNode,
   root: AstNode,
-  identifiers: AstNode[],
-  symbols: AstNode[]
+  definitions: AstNode[],
+  identifiers: AstNode[]
 ) {
-  node.root = root;
+  node.root = <SourceUnit>root;
   const position = node.src.split(":").map((i: string) => parseInt(i));
   node.start = position[0];
   node.end = position[0] + position[1];
   nodeMap.set(node.id, node);
-  let children = [];
+  let children: (AstNode | null | undefined)[] = [];
   switch (node.nodeType) {
     case "ContractDefinition":
     case "StructDefinition":
     case "FunctionDefinition":
     case "VariableDeclaration":
-      identifiers.push(node);
+      definitions.push(node);
       break;
     case "Identifier":
     case "MemberAccess":
-      symbols.push(node);
-      break;
     case "UserDefinedTypeName":
-      symbols.push(node);
+      identifiers.push(node);
       break;
   }
   switch (node.nodeType) {
@@ -71,17 +117,17 @@ export function parseAstItem(
         node.initializationExpression,
         node.condition,
         node.loopExpression,
-        ...node.body.statements,
+        ...getStatements(node.body),
       ];
       break;
     case "WhileStatement":
-      children = [node.condition, ...node.body.statements];
+      children = [node.condition, ...getStatements(node.body)];
       break;
     case "IfStatement":
       children = [
         node.condition,
-        ...node.trueBody.statements,
-        ...(node.falseBody?.statements ?? []),
+        ...getStatements(node.trueBody),
+        ...getStatements(node.falseBody),
       ];
       break;
     case "VariableDeclarationStatement":
@@ -100,14 +146,25 @@ export function parseAstItem(
       children = [node.subExpression];
       break;
     case "VariableDeclaration":
-      children = [node.typeName];
+      if (node.typeName) {
+        children = [node.typeName];
+      }
+      break;
+    case "ArrayTypeName":
+      children = [node.baseType];
       break;
   }
   for (const child of children) {
-    if (!child) {
-      debugger;
-    }
+    if (!child) continue;
     child.parent = node;
-    parseAstItem(child, root, identifiers, symbols);
+    parseAstNode(child, root, definitions, identifiers);
   }
+}
+
+function getStatements(
+  body: Block | Statement | null | undefined
+): Statement[] {
+  if (!body) return [];
+  if (body.nodeType == "Block") return body.statements ?? [];
+  return [body];
 }

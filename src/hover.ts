@@ -15,11 +15,15 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
   } else if (node.nodeType == "FunctionDefinition") {
     contents.push(createContent(getFunctionDefinition(node)));
   }
-  if (node.parent.nodeType == "StructDefinition") {
-    contents.push(createContent(`struct ${node.parent.name}`));
+
+  const parent = node.parent!;
+  if (parent.nodeType == "StructDefinition") {
+    contents.push(createContent(`struct ${parent.name}`));
   }
-  if (node.documentation) {
-    contents.push(createContent(node.documentation.text));
+
+  const documentation = Reflect.get(node, "documentation");
+  if (documentation) {
+    contents.push(createContent(documentation.text));
   }
   return { contents };
 }

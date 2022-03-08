@@ -10,7 +10,7 @@ import { compile } from "./compile";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
-import { AstNode, parseAst } from "./parse";
+import { AstNode, DefinitionNode, IdentifierNode, parseAst } from "./parse";
 
 export let options = { includePath: "node_modules" };
 export let rootPath = __dirname;
@@ -18,8 +18,8 @@ export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
 
-export const symbolMap = new Map<string, AstNode[]>();
-export const identifierMap = new Map<string, AstNode[]>();
+export const definitionMap = new Map<string, DefinitionNode[]>();
+export const identifierMap = new Map<string, IdentifierNode[]>();
 export const nodeMap = new Map<number, AstNode>();
 
 export function createServer(

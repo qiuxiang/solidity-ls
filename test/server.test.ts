@@ -20,7 +20,7 @@ import { getTestContract, getTestContractUri } from "./utils";
 class Stream extends Duplex {
   _write(chunk: string, _: string, done: () => void) {
     try {
-      console.log(JSON.parse(chunk.toString()));
+      // console.log(JSON.parse(chunk.toString()));
     } catch (_) {}
     this.emit("data", chunk);
     done();
@@ -55,23 +55,23 @@ describe("server", () => {
   });
 
   it("diagnostics", (done) => {
+    let isDone = false;
     openTextDocument("with-error.sol");
     client.onNotification(
       PublishDiagnosticsNotification.type,
       ({ diagnostics }) => {
-        expect(diagnostics[1]).toEqual({
-          severity: DiagnosticSeverity.Error,
-          range: {
-            start: { line: 5, character: 2 },
-            end: { line: 5, character: 3 },
-          },
-          message: `DeclarationError: Undeclared identifier.
-  |
-6 |   a();
-  |   ^`,
-          code: "7576",
-        });
-        done();
+        if (!isDone) {
+          expect(diagnostics[1]).toEqual({
+            severity: DiagnosticSeverity.Error,
+            range: {
+              start: { line: 5, character: 2 },
+              end: { line: 5, character: 3 },
+            },
+            message: "Undeclared identifier.",
+          });
+          isDone = true;
+          done();
+        }
       }
     );
   });
