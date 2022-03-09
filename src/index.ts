@@ -13,13 +13,14 @@ import { onHover } from "./hover";
 import { AstNode, DefinitionNode, IdentifierNode, parseAst } from "./parse";
 
 export let options = { includePath: "node_modules" };
-export let rootPath = __dirname;
+export let rootPath = join(__dirname, "..");
 export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
 
 export const definitionMap = new Map<string, DefinitionNode[]>();
 export const identifierMap = new Map<string, IdentifierNode[]>();
+export const astNodeMap = new Map<number, AstNode>();
 export const nodeMap = new Map<number, AstNode>();
 
 export function createServer(
@@ -33,9 +34,12 @@ export function createServer(
   }
 
   documents = new TextDocuments(TextDocument);
-  documents.onDidChangeContent(async ({ document }) => {
+  documents.onDidOpen(async ({ document }) => {
     parseAst(await compile(document));
     setTimeout(() => require("prettier"), 0);
+  });
+  documents.onDidSave(async ({ document }) => {
+    parseAst(await compile(document));
   });
 
   connection.onDocumentFormatting(onFormatting);
@@ -44,7 +48,7 @@ export function createServer(
 
   connection.onDidChangeConfiguration(async ({ settings: { solidity } }) => {
     options = solidity;
-    options.includePath = join(rootPath, options.includePath);
+    // options.includePath = join(rootPath, options.includePath);
   });
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {

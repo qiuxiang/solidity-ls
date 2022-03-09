@@ -5,8 +5,8 @@ import {
   Range,
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { definitionMap, documents, nodeMap } from ".";
-import { DefinitionNode } from "./parse";
+import { documents, identifierMap, nodeMap } from ".";
+import { DefinitionNode, IdentifierNode } from "./parse";
 
 export function onDefinition({ textDocument, position }: DefinitionParams) {
   const document = documents.get(textDocument.uri);
@@ -29,16 +29,24 @@ export function getDefinition(
   document: TextDocument,
   position: Position
 ): DefinitionNode | null {
+  const identifier = getIdentifier(document, position);
+  const ref = identifier?.referencedDeclaration;
+  if (ref) return <DefinitionNode>nodeMap.get(ref);
+  return null;
+}
+
+export function getIdentifier(
+  document: TextDocument,
+  position: Position
+): IdentifierNode | null {
   const offset = document.offsetAt(position);
-  const symbols = definitionMap.get(document.uri);
-  if (!symbols) return null;
-  for (let i = symbols.length - 1; i >= 0; i--) {
-    const symbol = symbols[i];
-    const { srcStart: start, srcEnd: end } = symbol;
+  const identifiers = identifierMap.get(decodeURIComponent(document.uri));
+  if (!identifiers) return null;
+  for (let i = identifiers.length - 1; i >= 0; i--) {
+    const identifier = identifiers[i];
+    const { srcStart: start, srcEnd: end } = identifier;
     if (start! <= offset && offset <= end!) {
-      return <DefinitionNode>(
-        nodeMap.get(Reflect.get(symbol, "referencedDeclaration"))
-      );
+      return identifier;
     }
   }
   return null;

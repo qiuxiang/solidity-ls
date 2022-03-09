@@ -6,8 +6,8 @@ import { getTestContract } from "./utils";
 
 describe("utils", () => {
   it("compile()", async () => {
-    console.log(await compile(getTestContract("basic.sol")));
-    console.log(await compile(getTestContract("with-error.sol")));
+    await compile(getTestContract("basic.sol"));
+    await compile(getTestContract("with-error.sol"));
   });
 
   it("parseAst()", async () => {
@@ -16,7 +16,9 @@ describe("utils", () => {
     writeFileSync("dist/ast.json", JSON.stringify(ast));
     parseAst(ast);
     console.log(
-      definitionMap.get(document.uri)?.map((i) => [i.srcStart, i.nodeType, i.name])
+      definitionMap
+        .get(document.uri)
+        ?.map((i) => [i.srcStart, i.nodeType, i.name])
     );
     console.log(
       identifierMap

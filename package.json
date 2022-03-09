@@ -3,7 +3,7 @@
   "scripts": {
     "esbuild": "esbuild --sourcemap --platform=node --bundle --external:./node_modules/* --outdir=dist",
     "test": "npm run esbuild test/test.ts && node node_modules/jasmine/bin/jasmine.js dist/test.js",
-    "build": "npm run esbuild src/index.ts"
+    "build": "npm run esbuild src/index.ts --"
   },
   "dependencies": {
     "prettier": "^2.5.1",

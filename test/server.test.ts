@@ -76,12 +76,16 @@ describe("server", () => {
     );
   });
 
-  it("hover", async () => {
-    const result = await client.sendRequest(HoverRequest.type, {
-      textDocument: { uri: getTestContractUri("basic.sol") },
-      position: { line: 33, character: 9 },
-    });
-    console.log(result);
+  it("hover", (done) => {
+    openTextDocument("ballot.sol");
+    setTimeout(async () => {
+      const result = await client.sendRequest(HoverRequest.type, {
+        textDocument: { uri: getTestContractUri("ballot.sol") },
+        position: { line: 33, character: 9 },
+      });
+      console.log(result);
+      done();
+    }, 500);
   });
 
   it("format", async () => {

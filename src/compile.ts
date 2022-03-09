@@ -1,5 +1,7 @@
-import { spawn } from "child_process";
-import { dirname, join } from "path";
+import { exec } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
+import { SourceUnit } from "solidity-ast";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Diagnostic,
@@ -9,50 +11,34 @@ import {
   ShowMessageRequest,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
-import { connection, options } from ".";
+import { connection, options, rootPath } from ".";
 
 export function compile(document: TextDocument) {
-  return new Promise<any[]>((resolve) => {
-    const path = URI.parse(document.uri).path;
-    const child = spawn("solc", [
-      "-",
-      "--base-path",
-      ".",
-      "--include-path",
-      options.includePath,
-      "--ast-compact-json",
-    ]);
-
-    let stdout = "";
-    child.stdout.on("data", (buffer) => (stdout += buffer.toString()));
-    child.stdout.on("end", () => {
-      resolve(parseAstOutput(stdout, path));
-    });
-
-    let stderr = "";
-    child.stderr.on("data", (buffer) => (stderr += buffer.toString()));
-    child.stdout.on("end", () => {
-      if (!stderr) return;
-
-      const diagnostics = parseError(stderr);
-      if (diagnostics.length) {
-        connection?.sendDiagnostics({ uri: document.uri, diagnostics });
-      } else {
-        connection?.sendRequest(ShowMessageRequest.type, {
-          type: MessageType.Error,
-          message: stderr,
-        });
+  const path = URI.parse(document.uri).path;
+  return new Promise<SourceUnit[]>((resolve) => {
+    exec(
+      `solc ${path} --base-path . --include-path ${options.includePath} --ast-compact-json`,
+      (_, stdout, stderr) => {
+        if (stderr) {
+          const diagnostics = parseError(stderr);
+          if (diagnostics.length) {
+            connection.sendDiagnostics({ uri: document.uri, diagnostics });
+          } else {
+            connection.sendRequest(ShowMessageRequest.type, {
+              type: MessageType.Error,
+              message: stderr,
+            });
+          }
+          resolve([]);
+        } else {
+          resolve(parseAstOutput(stdout));
+        }
       }
-      resolve([]);
-    });
-
-    child.stdin.write(document.getText());
-    child.stdin.end();
+    );
   });
 }
 
-export function parseAstOutput(stdout: string, path: string) {
-  const dir = dirname(path);
+export function parseAstOutput(stdout: string) {
   let isJson = false;
   let lines = [];
   const files = [];
@@ -62,17 +48,14 @@ export function parseAstOutput(stdout: string, path: string) {
     if (line == "}") {
       isJson = false;
       const json = JSON.parse(lines.join("\n"));
-      if (json.absolutePath == "<stdin>") {
+      const includePath = join(rootPath, options.includePath);
+      let path: string;
+      if (existsSync((path = join(rootPath, json.absolutePath)))) {
         json.absolutePath = path;
-      } else if (
-        json.absolutePath.startsWith("./") ||
-        json.absolutePath.startsWith("../")
-      ) {
-        json.absolutePath = join(dir, json.absolutePath);
-      } else {
-        json.absolutePath = join(options.includePath, json.absolutePath);
+      } else if (existsSync((path = join(includePath, json.absolutePath)))) {
+        json.absolutePath = path;
       }
-      json.absolutePath = "file://" + json.absolutePath;
+      json.absolutePath = "file://" + path;
       files.push(json);
       lines = [];
     }

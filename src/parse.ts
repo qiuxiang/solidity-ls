@@ -16,7 +16,7 @@ import {
   UsingForDirective,
   VariableDeclaration,
 } from "solidity-ast";
-import { definitionMap, nodeMap } from ".";
+import { definitionMap, identifierMap, nodeMap } from ".";
 
 export interface AstNodeData {
   root?: SourceUnit;
@@ -55,8 +55,8 @@ export function parseAst(files: SourceUnit[]) {
   for (const ast of files) {
     const uri = ast.absolutePath;
     if (!definitionMap.has(uri)) definitionMap.set(uri, []);
-    if (!definitionMap.has(uri)) definitionMap.set(uri, []);
-    parseAstNode(ast, ast, definitionMap.get(uri)!, definitionMap.get(uri)!);
+    if (!identifierMap.has(uri)) identifierMap.set(uri, []);
+    parseAstNode(ast, ast, definitionMap.get(uri)!, identifierMap.get(uri)!);
   }
 }
 
@@ -77,6 +77,9 @@ export function parseAstNode(
     case "StructDefinition":
     case "FunctionDefinition":
     case "VariableDeclaration":
+    case "EventDefinition":
+    case "EnumDefinition":
+    case "ErrorDefinition":
       definitions.push(node);
       break;
     case "Identifier":
@@ -152,6 +155,12 @@ export function parseAstNode(
       break;
     case "ArrayTypeName":
       children = [node.baseType];
+      break;
+    case "EmitStatement":
+      children = [node.eventCall];
+      break;
+    case "Return":
+      children = [node.expression];
       break;
   }
   for (const child of children) {
