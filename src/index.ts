@@ -6,22 +6,17 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
-import { compile } from "./compile";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
-import { AstNode, DefinitionNode, IdentifierNode, parseAst } from "./parse";
+import { Solidity } from "./solidity";
 
 export let options = { includePath: "node_modules" };
 export let rootPath = join(__dirname, "..");
 export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
-
-export const definitionMap = new Map<string, DefinitionNode[]>();
-export const identifierMap = new Map<string, IdentifierNode[]>();
-export const astNodeMap = new Map<number, AstNode>();
-export const nodeMap = new Map<number, AstNode>();
+export const solidityMap = new Map<string, Solidity>();
 
 export function createServer(
   input?: NodeJS.ReadableStream,
@@ -33,22 +28,12 @@ export function createServer(
     connection = createConnection();
   }
 
-  documents = new TextDocuments(TextDocument);
-  documents.onDidOpen(async ({ document }) => {
-    parseAst(await compile(document));
-    setTimeout(() => require("prettier"), 0);
-  });
-  documents.onDidSave(async ({ document }) => {
-    parseAst(await compile(document));
-  });
-
   connection.onDocumentFormatting(onFormatting);
   connection.onDefinition(onDefinition);
   connection.onHover(onHover);
 
-  connection.onDidChangeConfiguration(async ({ settings: { solidity } }) => {
-    options = solidity;
-    // options.includePath = join(rootPath, options.includePath);
+  connection.onDidChangeConfiguration(({ settings }) => {
+    options = settings.solidity;
   });
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
@@ -63,7 +48,18 @@ export function createServer(
     };
   });
 
+  documents = new TextDocuments(TextDocument);
   documents.listen(connection);
+
+  documents.onDidOpen(({ document }) => {
+    solidityMap.set(document.uri, new Solidity(document));
+    setTimeout(() => require("prettier"), 0);
+  });
+
+  documents.onDidSave(({ document }) => {
+    solidityMap.set(document.uri, new Solidity(document));
+  });
+
   connection.listen();
   return connection;
 }

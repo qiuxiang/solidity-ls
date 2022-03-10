@@ -1,53 +1,26 @@
-import {
-  DefinitionParams,
-  Location,
-  Position,
-  Range,
-} from "vscode-languageserver";
+import { readFileSync } from "fs";
+import { DefinitionParams, Location, Range } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { documents, identifierMap, nodeMap } from ".";
-import { DefinitionNode, IdentifierNode } from "./parse";
+import { URI } from "vscode-uri";
+import { documents, solidityMap } from ".";
 
 export function onDefinition({ textDocument, position }: DefinitionParams) {
-  const document = documents.get(textDocument.uri);
+  let document = documents.get(textDocument.uri);
   if (!document) return null;
-  const node = getDefinition(document, position);
-  if (!node) return [];
-  const path = node.root!.absolutePath;
-  if (!path.startsWith("file://")) {
+  const solidity = solidityMap.get(document.uri);
+  if (!solidity) return null;
+  const node = solidity?.getDefinition(document, position);
+  if (!node) return null;
+  const targetUri = node.root!.absolutePath;
+  if (targetUri != document.uri) {
+    const content = readFileSync(URI.parse(targetUri).path).toString();
+    document = TextDocument.create(targetUri, "solidity", 0, content);
   }
   return Location.create(
-    node.root!.absolutePath,
+    document.uri,
     Range.create(
       document.positionAt(node.srcStart!),
       document.positionAt(node.srcEnd!)
     )
   );
-}
-
-export function getDefinition(
-  document: TextDocument,
-  position: Position
-): DefinitionNode | null {
-  const identifier = getIdentifier(document, position);
-  const ref = identifier?.referencedDeclaration;
-  if (ref) return <DefinitionNode>nodeMap.get(ref);
-  return null;
-}
-
-export function getIdentifier(
-  document: TextDocument,
-  position: Position
-): IdentifierNode | null {
-  const offset = document.offsetAt(position);
-  const identifiers = identifierMap.get(decodeURIComponent(document.uri));
-  if (!identifiers) return null;
-  for (let i = identifiers.length - 1; i >= 0; i--) {
-    const identifier = identifiers[i];
-    const { srcStart: start, srcEnd: end } = identifier;
-    if (start! <= offset && offset <= end!) {
-      return identifier;
-    }
-  }
-  return null;
 }

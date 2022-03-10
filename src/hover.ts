@@ -1,13 +1,14 @@
 import { TypeName, VariableDeclaration } from "solidity-ast";
 import { Hover, HoverParams } from "vscode-languageserver/node";
-import { documents } from ".";
-import { getDefinition } from "./definition";
+import { documents, solidityMap } from ".";
 import { AstNodeData } from "./parse";
 
 export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const document = documents.get(textDocument.uri);
   if (!document) return null;
-  const node = getDefinition(document, position);
+  const solidity = solidityMap.get(document.uri);
+  if (!solidity) return null;
+  const node = solidity?.getDefinition(document, position);
   if (!node) return null;
   const contents: Hover["contents"] = [];
   if (node.nodeType == "VariableDeclaration") {

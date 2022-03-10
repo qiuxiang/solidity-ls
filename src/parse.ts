@@ -16,7 +16,6 @@ import {
   UsingForDirective,
   VariableDeclaration,
 } from "solidity-ast";
-import { definitionMap, identifierMap, nodeMap } from ".";
 
 export interface AstNodeData {
   root?: SourceUnit;
@@ -51,25 +50,19 @@ export type AstNode = (
 ) &
   AstNodeData;
 
-export function parseAst(files: SourceUnit[]) {
-  for (const ast of files) {
-    const uri = ast.absolutePath;
-    if (!definitionMap.has(uri)) definitionMap.set(uri, []);
-    if (!identifierMap.has(uri)) identifierMap.set(uri, []);
-    parseAstNode(ast, ast, definitionMap.get(uri)!, identifierMap.get(uri)!);
-  }
-}
-
-export function parseAstNode(
+export function parse(
   node: AstNode,
   root: AstNode,
   definitions: AstNode[],
-  identifiers: AstNode[]
+  identifiers: AstNode[],
+  nodes: AstNode[],
+  nodeMap: Map<number, AstNode>
 ) {
   node.root = <SourceUnit>root;
   const position = node.src.split(":").map((i: string) => parseInt(i));
   node.srcStart = position[0];
   node.srcEnd = position[0] + position[1];
+  nodes.push(node);
   nodeMap.set(node.id, node);
   let children: (AstNode | null | undefined)[] = [];
   switch (node.nodeType) {
@@ -166,7 +159,7 @@ export function parseAstNode(
   for (const child of children) {
     if (!child) continue;
     child.parent = node;
-    parseAstNode(child, root, definitions, identifiers);
+    parse(child, root, definitions, identifiers, nodes, nodeMap);
   }
 }
 

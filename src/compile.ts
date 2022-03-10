@@ -17,7 +17,7 @@ export function compile(document: TextDocument) {
   const path = URI.parse(document.uri).path;
   return new Promise<SourceUnit[]>((resolve) => {
     exec(
-      `solc ${path} --base-path . --include-path ${options.includePath} --ast-compact-json`,
+      `solc ${path} --base-path . --include-path ${options.includePath} --ast-compact-json --error-recovery`,
       (_, stdout, stderr) => {
         if (stderr) {
           const diagnostics = parseError(stderr);
