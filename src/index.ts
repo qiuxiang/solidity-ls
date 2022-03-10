@@ -6,6 +6,7 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
+import { onCompletion } from "./completion";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
@@ -31,6 +32,7 @@ export function createServer(
   connection.onDocumentFormatting(onFormatting);
   connection.onDefinition(onDefinition);
   connection.onHover(onHover);
+  connection.onCompletion(onCompletion);
 
   connection.onDidChangeConfiguration(({ settings }) => {
     options = settings.solidity;
@@ -44,6 +46,9 @@ export function createServer(
         hoverProvider: true,
         documentFormattingProvider: true,
         definitionProvider: true,
+        completionProvider: {
+          triggerCharacters: ["."],
+        },
       },
     };
   });
