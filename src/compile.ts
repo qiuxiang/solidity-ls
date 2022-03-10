@@ -16,6 +16,7 @@ import { connection, options, rootPath } from ".";
 export function compile(document: TextDocument) {
   const path = URI.parse(document.uri).path;
   return new Promise<SourceUnit[]>((resolve) => {
+    connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
     exec(
       `solc ${path} --base-path . --include-path ${options.includePath} --ast-compact-json --error-recovery`,
       (_, stdout, stderr) => {
@@ -48,19 +49,21 @@ export function parseAstOutput(stdout: string) {
     if (line == "}") {
       isJson = false;
       const json = JSON.parse(lines.join("\n"));
-      const includePath = join(rootPath, options.includePath);
-      let path: string;
-      if (existsSync((path = join(rootPath, json.absolutePath)))) {
-        json.absolutePath = path;
-      } else if (existsSync((path = join(includePath, json.absolutePath)))) {
-        json.absolutePath = path;
-      }
-      json.absolutePath = "file://" + path;
+      json.absolutePath = getAbsoluteUri(json.absolutePath);
       files.push(json);
       lines = [];
     }
   }
   return files;
+}
+
+export function getAbsoluteUri(path: string) {
+  const includePath = join(rootPath, options.includePath);
+  let absolutePath = join(rootPath, path);
+  if (!existsSync(absolutePath)) {
+    absolutePath = join(includePath, path);
+  }
+  return "file://" + absolutePath;
 }
 
 export function parseError(stderr: string) {

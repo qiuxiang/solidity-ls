@@ -1,6 +1,13 @@
+import { ImportDirective } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { compile } from "./compile";
-import { AstNode, DefinitionNode, IdentifierNode, parse } from "./parse";
+import {
+  AstNode,
+  AstNodeData,
+  DefinitionNode,
+  IdentifierNode,
+  parse,
+} from "./parse";
 
 export class Solidity {
   document: TextDocument;
@@ -34,10 +41,15 @@ export class Solidity {
   getDefinition(
     document: TextDocument,
     position: Position
-  ): DefinitionNode | null {
-    const identifier = this.getIdentifier(document, position);
-    const ref = identifier?.referencedDeclaration;
-    if (ref) return <DefinitionNode>this.nodeMap.get(ref);
+  ): DefinitionNode | (ImportDirective & AstNodeData) | null {
+    const node = this.getSelectedNodes(document, position)[0];
+    if (!node) return null;
+    if (node.nodeType == "ImportDirective") {
+      return node;
+    } else {
+      const ref = Reflect.get(node, "referencedDeclaration");
+      if (ref) return <DefinitionNode>this.nodeMap.get(ref);
+    }
     return null;
   }
 
@@ -57,9 +69,6 @@ export class Solidity {
       const node = nodes[i];
       if (node.srcStart! <= offset && offset <= node.srcEnd!) {
         selected.push(node);
-      }
-      if (offset > node.srcEnd!) {
-        break;
       }
     }
     return selected;
