@@ -56,7 +56,7 @@ export function parse(
   node: AstNode,
   root: AstNode,
   definitions: AstNode[],
-  identifiers: AstNode[],
+  scopes: Map<number, DefinitionNode[]>,
   nodes: AstNode[],
   nodeMap: Map<number, AstNode>
 ) {
@@ -76,11 +76,14 @@ export function parse(
     case "EnumDefinition":
     case "ErrorDefinition":
       definitions.push(node);
-      break;
-    case "Identifier":
-    case "MemberAccess":
-    case "UserDefinedTypeName":
-      identifiers.push(node);
+      const scopeId =
+        Reflect.get(node, "scope") ?? Reflect.get(node.parent!, "scope");
+      const scope = scopes.get(scopeId);
+      if (scope) {
+        scope.push(node);
+      } else {
+        scopes.set(scopeId, [node]);
+      }
       break;
   }
   switch (node.nodeType) {
@@ -167,7 +170,7 @@ export function parse(
   for (const child of children) {
     if (!child) continue;
     child.parent = node;
-    parse(child, root, definitions, identifiers, nodes, nodeMap);
+    parse(child, root, definitions, scopes, nodes, nodeMap);
   }
 }
 

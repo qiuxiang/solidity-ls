@@ -14,7 +14,10 @@ export function compile(document: TextDocument) {
   const input = {
     language: "Solidity",
     sources: { [document.uri]: { content: document.getText() } },
-    settings: { outputSelection: { "*": { "": ["ast"] } } },
+    settings: {
+      outputSelection: { "*": { "": ["ast"] } },
+      parserErrorRecovery: true,
+    },
   };
   const output = solc.compile(JSON.stringify(input), {
     import(path: string) {

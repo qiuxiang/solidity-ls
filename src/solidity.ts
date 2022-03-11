@@ -1,4 +1,4 @@
-import { ImportDirective } from "solidity-ast";
+import { ImportDirective, SourceUnit } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
 import { compile } from "./compile";
 import {
@@ -11,9 +11,10 @@ import {
 
 export class Solidity {
   document: TextDocument;
-  definitions = new Map<string, DefinitionNode[]>();
-  identifiers = new Map<string, IdentifierNode[]>();
+  definitions: DefinitionNode[] = [];
   nodes = new Map<string, AstNode[]>();
+  scopes = new Map<number, DefinitionNode[]>();
+  astMap = new Map<string, SourceUnit>();
   nodeMap = new Map<number, AstNode>();
 
   constructor(document: TextDocument) {
@@ -24,14 +25,13 @@ export class Solidity {
   async compile() {
     for (const root of compile(this.document)) {
       let uri = root.absolutePath;
-      if (!this.definitions.has(uri)) this.definitions.set(uri, []);
-      if (!this.identifiers.has(uri)) this.identifiers.set(uri, []);
+      this.astMap.set(uri, root);
       if (!this.nodes.has(uri)) this.nodes.set(uri, []);
       parse(
         root,
         root,
-        this.definitions.get(uri)!,
-        this.identifiers.get(uri)!,
+        this.definitions,
+        this.scopes,
         this.nodes.get(uri)!,
         this.nodeMap
       );
