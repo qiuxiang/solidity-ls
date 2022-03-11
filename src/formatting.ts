@@ -1,4 +1,4 @@
-import { existsSync } from "fs";
+import { access } from "fs/promises";
 import { join } from "path";
 import {
   DocumentFormattingParams,
@@ -14,7 +14,9 @@ export function onFormatting({
   if (!document) return [];
   const pluginName = "prettier-plugin-solidity";
   let pluginPath = join(extensionPath, "node_modules", pluginName);
-  if (!existsSync(pluginPath)) {
+  try {
+    access(pluginPath);
+  } catch (_) {
     pluginPath = join(extensionPath, "..", pluginName);
   }
   const { format, resolveConfig } = require("prettier");

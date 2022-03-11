@@ -1,88 +1,73 @@
-import { exec } from "child_process";
-import { existsSync } from "fs";
+import { readFileSync, accessSync } from "fs";
 import { join } from "path";
-import { SourceUnit } from "solidity-ast";
+// @ts-ignore
+import solc from "solc";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Diagnostic,
   DiagnosticSeverity,
-  MessageType,
   Range,
-  ShowMessageRequest,
 } from "vscode-languageserver/node";
-import { URI } from "vscode-uri";
 import { connection, options, rootPath } from ".";
 
 export function compile(document: TextDocument) {
-  const path = URI.parse(document.uri).path;
-  return new Promise<SourceUnit[]>((resolve) => {
-    connection.sendDiagnostics({ uri: document.uri, diagnostics: [] });
-    exec(
-      `solc ${path} --base-path . --include-path ${options.includePath} --ast-compact-json --error-recovery`,
-      (_, stdout, stderr) => {
-        if (stderr) {
-          const diagnostics = parseError(stderr);
-          if (diagnostics.length) {
-            connection.sendDiagnostics({ uri: document.uri, diagnostics });
-          } else {
-            connection.sendRequest(ShowMessageRequest.type, {
-              type: MessageType.Error,
-              message: stderr,
-            });
-          }
-          resolve([]);
+  const input = {
+    language: "Solidity",
+    sources: { [document.uri]: { content: document.getText() } },
+    settings: { outputSelection: { "*": { "": ["ast"] } } },
+  };
+  const output = solc.compile(JSON.stringify(input), {
+    import(path: string) {
+      try {
+        if (path.startsWith("file://")) {
+          path = decodeURIComponent(path.substring(7));
         } else {
-          resolve(parseAstOutput(stdout));
+          path = getAbsolutePath(path);
         }
+        return { contents: readFileSync(path).toString() };
+      } catch ({ message }) {
+        return { error: message };
       }
-    );
+    },
   });
+  const { sources, errors = [] } = JSON.parse(output);
+  showErrors(document, errors);
+  return Object.values(sources).map((i: any) => i.ast);
 }
 
-export function parseAstOutput(stdout: string) {
-  let isJson = false;
-  let lines = [];
-  const files = [];
-  for (const line of stdout.split("\n")) {
-    if (line == "{") isJson = true;
-    if (isJson) lines.push(line);
-    if (line == "}") {
-      isJson = false;
-      const json = JSON.parse(lines.join("\n"));
-      json.absolutePath = getAbsoluteUri(json.absolutePath);
-      files.push(json);
-      lines = [];
-    }
+export function getAbsolutePath(path: string) {
+  if (path.startsWith("file://")) {
+    return decodeURIComponent(path.substring(7));
   }
-  return files;
+  const includePath = join(rootPath, options.includePath);
+  let absolutePath = join(rootPath, path);
+  try {
+    accessSync(absolutePath);
+  } catch (_) {
+    absolutePath = join(includePath, path);
+  }
+  return absolutePath;
 }
 
 export function getAbsoluteUri(path: string) {
-  const includePath = join(rootPath, options.includePath);
-  let absolutePath = join(rootPath, path);
-  if (!existsSync(absolutePath)) {
-    absolutePath = join(includePath, path);
-  }
-  return "file://" + absolutePath;
+  if (path.startsWith("file://")) return path;
+  return "file://" + getAbsolutePath(path);
 }
 
-export function parseError(stderr: string) {
-  const lines = stderr.split("\n");
+export function showErrors(document: TextDocument, errors: any[]) {
   const diagnostics: Diagnostic[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const message = lines[i].match(/^(Warning|Error): (.*)/);
-    if (message) {
-      const source = lines[i + 1].match(/:(\d+)?:?(\d+)?/)!;
-      const line = parseInt(source?.[1]) || 1;
-      const character = parseInt(source?.[2]) || 1;
-      let severity: DiagnosticSeverity;
-      if (message[1] == "Error") severity = DiagnosticSeverity.Error;
-      else severity = DiagnosticSeverity.Warning;
-      const range = Range.create(line - 1, character - 1, line - 1, character);
-      const diagnostic: Diagnostic = { severity, range, message: message[2] };
-      diagnostics.push(diagnostic);
-      i += 1;
-    }
+  for (const error of errors) {
+    const { start, end } = error.sourceLocation;
+    const diagnostic: Diagnostic = {
+      severity:
+        error.severity == "error"
+          ? DiagnosticSeverity.Error
+          : DiagnosticSeverity.Warning,
+      range: Range.create(document.positionAt(start), document.positionAt(end)),
+      message: error.formattedMessage.replace(/ -->.*\n/, ""),
+      code: error.errorCode,
+    };
+    diagnostics.push(diagnostic);
   }
-  return diagnostics;
+  connection?.sendDiagnostics({ uri: document.uri, diagnostics });
 }

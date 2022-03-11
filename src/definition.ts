@@ -1,27 +1,38 @@
-import { readFileSync } from "fs";
+import { readFile } from "fs/promises";
 import { DefinitionParams, Location, Range } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { URI } from "vscode-uri";
 import { documents, solidityMap } from ".";
-import { getAbsoluteUri } from "./compile";
+import { getAbsolutePath, getAbsoluteUri } from "./compile";
+import { AstNode } from "./parse";
 
-export function onDefinition({ textDocument, position }: DefinitionParams) {
+export async function onDefinition({
+  textDocument,
+  position,
+}: DefinitionParams) {
   let document = documents.get(textDocument.uri);
   if (!document) return null;
+
   const solidity = solidityMap.get(document.uri);
   if (!solidity) return null;
-  const node = solidity?.getDefinition(document, position);
+
+  let node: AstNode | undefined;
+  node = solidity.getSelectedNodes(document, position)[0];
   if (!node) return null;
+
   if (node.nodeType == "ImportDirective") {
-    return Location.create(
-      getAbsoluteUri(node.absolutePath),
-      Range.create(0, 0, 0, 0)
-    );
+    const uri = getAbsoluteUri(node.absolutePath);
+    return Location.create(uri, Range.create(0, 0, 0, 0));
+  } else {
+    const ref = Reflect.get(node, "referencedDeclaration");
+    if (ref) node = solidity.nodeMap.get(ref);
+    if (!node) return null;
   }
+
   const targetUri = node.root!.absolutePath;
   if (targetUri != document.uri) {
-    const content = readFileSync(URI.parse(targetUri).path).toString();
-    document = TextDocument.create(targetUri, "solidity", 0, content);
+    const path = getAbsolutePath(decodeURIComponent(targetUri));
+    const content = (await readFile(path)).toString();
+    document = TextDocument.create("file://" + path, "solidity", 0, content);
   }
   return Location.create(
     document.uri,

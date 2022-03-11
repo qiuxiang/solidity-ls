@@ -60,7 +60,7 @@ describe("server", () => {
     client.onNotification(
       PublishDiagnosticsNotification.type,
       ({ diagnostics }) => {
-        if (!isDone) {
+        if (!isDone && diagnostics.length) {
           expect(diagnostics[1]).toEqual({
             severity: DiagnosticSeverity.Error,
             range: {

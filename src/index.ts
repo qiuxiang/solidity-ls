@@ -56,13 +56,9 @@ export function createServer(
   documents = new TextDocuments(TextDocument);
   documents.listen(connection);
 
-  documents.onDidOpen(({ document }) => {
+  documents.onDidChangeContent(({ document }) => {
     solidityMap.set(document.uri, new Solidity(document));
     setTimeout(() => require("prettier"), 0);
-  });
-
-  documents.onDidSave(({ document }) => {
-    solidityMap.set(document.uri, new Solidity(document));
   });
 
   connection.listen();

@@ -6,6 +6,7 @@ import {
   Expression,
   FunctionDefinition,
   Identifier,
+  IdentifierPath,
   MemberAccess,
   SourceUnit,
   Statement,
@@ -47,6 +48,7 @@ export type AstNode = (
   | TypeName
   | SourceUnit["nodes"][0]
   | ContractDefinition["nodes"][0]
+  | IdentifierPath
 ) &
   AstNodeData;
 
@@ -83,8 +85,10 @@ export function parse(
   }
   switch (node.nodeType) {
     case "SourceUnit":
-    case "ContractDefinition":
       children = node.nodes;
+      break;
+    case "ContractDefinition":
+      children = [...node.baseContracts.map((i) => i.baseName), ...node.nodes];
       break;
     case "StructDefinition":
       children = node.members;
@@ -92,8 +96,9 @@ export function parse(
     case "FunctionDefinition":
       children = [
         ...node.parameters.parameters,
+        ...node.modifiers.map((i) => i.modifierName),
         ...node.returnParameters.parameters,
-        ...(node.body?.statements ?? []),
+        ...getStatements(node.body),
       ];
       break;
     case "ExpressionStatement":
@@ -154,6 +159,9 @@ export function parse(
       break;
     case "Return":
       children = [node.expression];
+      break;
+    case "UncheckedBlock":
+      children = node.statements;
       break;
   }
   for (const child of children) {

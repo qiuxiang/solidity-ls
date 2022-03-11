@@ -22,8 +22,8 @@ export class Solidity {
   }
 
   async compile() {
-    for (const root of await compile(this.document)) {
-      const uri = root.absolutePath;
+    for (const root of compile(this.document)) {
+      let uri = root.absolutePath;
       if (!this.definitions.has(uri)) this.definitions.set(uri, []);
       if (!this.identifiers.has(uri)) this.identifiers.set(uri, []);
       if (!this.nodes.has(uri)) this.nodes.set(uri, []);
@@ -62,7 +62,7 @@ export class Solidity {
 
   getSelectedNodes(document: TextDocument, position: Position): AstNode[] {
     const offset = document.offsetAt(position);
-    const nodes = this.nodes.get(decodeURIComponent(document.uri));
+    const nodes = this.nodes.get(document.uri);
     if (!nodes) return [];
     const selected: AstNode[] = [];
     for (let i = nodes.length - 1; i >= 0; i--) {
