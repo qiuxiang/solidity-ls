@@ -1,6 +1,8 @@
 import { join } from "path/posix";
 import { Duplex } from "stream";
 import {
+  CompletionRequest,
+  CompletionTriggerKind,
   Connection,
   createConnection,
   DiagnosticSeverity,
@@ -61,13 +63,18 @@ describe("server", () => {
       PublishDiagnosticsNotification.type,
       ({ diagnostics }) => {
         if (!isDone && diagnostics.length) {
+          console.log(diagnostics[1]);
           expect(diagnostics[1]).toEqual({
             severity: DiagnosticSeverity.Error,
             range: {
               start: { line: 5, character: 2 },
               end: { line: 5, character: 3 },
             },
-            message: "Undeclared identifier.",
+            message: `DeclarationError: Undeclared identifier.
+  |
+6 |   a();
+  |   ^`,
+            code: "7576",
           });
           isDone = true;
           done();
@@ -76,16 +83,18 @@ describe("server", () => {
     );
   });
 
-  it("hover", (done) => {
+  it("hover", async () => {
     openTextDocument("ballot.sol");
-    setTimeout(async () => {
-      const result = await client.sendRequest(HoverRequest.type, {
-        textDocument: { uri: getTestContractUri("ballot.sol") },
-        position: { line: 33, character: 9 },
-      });
-      console.log(result);
-      done();
-    }, 500);
+    const { contents } = (await client.sendRequest(HoverRequest.type, {
+      textDocument: { uri: getTestContractUri("ballot.sol") },
+      position: { line: 33, character: 9 },
+    }))!;
+    expect(contents).toEqual([
+      {
+        language: "solidity",
+        value: "(state) address public chairperson",
+      },
+    ]);
   });
 
   it("format", async () => {
@@ -97,6 +106,16 @@ describe("server", () => {
     expect(result?.[0].newText).toEqual(
       getTestContract("formatted.sol").getText()
     );
+  });
+
+  it("completion", async () => {
+    const document = openTextDocument("erc20.sol");
+    const result = await client.sendRequest(CompletionRequest.type, {
+      textDocument: { uri: document.uri },
+      position: { line: 7, character: 5 },
+      context: { triggerKind: CompletionTriggerKind.Invoked },
+    });
+    console.log(result);
   });
 
   function openTextDocument(name: string) {

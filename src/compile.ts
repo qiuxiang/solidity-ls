@@ -67,7 +67,9 @@ export function showErrors(document: TextDocument, errors: any[]) {
           ? DiagnosticSeverity.Error
           : DiagnosticSeverity.Warning,
       range: Range.create(document.positionAt(start), document.positionAt(end)),
-      message: error.formattedMessage.replace(/ -->.*\n/, ""),
+      message: error.formattedMessage
+        .replace(/ -->.*\n/, "")
+        .replace("\n\n", ""),
       code: error.errorCode,
     };
     diagnostics.push(diagnostic);
