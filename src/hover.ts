@@ -23,7 +23,7 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
 
   const documentation = Reflect.get(node, "documentation");
   if (documentation) {
-    contents.push(createContent(documentation.text));
+    contents.push(createContent(documentation.text.replace(/\n /g, "\n")));
   }
   return { contents };
 }
@@ -44,7 +44,10 @@ export function getDefinitionInfo(
   }
 }
 
-function getVariableDeclaration(node: VariableDeclaration & AstNodeData) {
+function getVariableDeclaration(
+  node: VariableDeclaration & AstNodeData,
+  struct = false
+) {
   const { typeName } = node;
   if (!typeName) return "";
   let declaration = getTypeName(typeName);
@@ -57,7 +60,7 @@ function getVariableDeclaration(node: VariableDeclaration & AstNodeData) {
       declaration += " public";
     }
   }
-  if (node.parent!.nodeType == "StructDefinition") {
+  if (node.parent!.nodeType == "StructDefinition" && !struct) {
     declaration = `(member) ${declaration}`;
   }
   return `${declaration} ${node.name}`;
@@ -82,7 +85,7 @@ function getTypeName(type: TypeName): string {
 function getStructDefinition(node: any) {
   let value = `struct ${node.name} {\n`;
   for (const member of node.members) {
-    value += `  ${getVariableDeclaration(member)};\n`;
+    value += `  ${getVariableDeclaration(member, true)};\n`;
   }
   value += "}";
   return value;
