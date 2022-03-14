@@ -1,6 +1,5 @@
 import { ImportDirective, SourceUnit } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
-import { compile } from "./compile";
 import {
   AstNode,
   AstNodeData,
@@ -17,13 +16,9 @@ export class Solidity {
   astMap = new Map<string, SourceUnit>();
   nodeMap = new Map<number, AstNode>();
 
-  constructor(document: TextDocument) {
+  constructor(document: TextDocument, sources: SourceUnit[]) {
     this.document = document;
-    this.compile();
-  }
-
-  async compile() {
-    for (const root of compile(this.document)) {
+    for (const root of sources) {
       let uri = root.absolutePath;
       this.astMap.set(uri, root);
       if (!this.nodes.has(uri)) this.nodes.set(uri, []);

@@ -6,6 +6,7 @@ import {
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
+import { compile } from "./compile";
 import { onCompletion } from "./completion";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
@@ -46,9 +47,7 @@ export function createServer(
         hoverProvider: true,
         documentFormattingProvider: true,
         definitionProvider: true,
-        completionProvider: {
-          triggerCharacters: ["."],
-        },
+        completionProvider: { triggerCharacters: ["."] },
       },
     };
   });
@@ -57,7 +56,10 @@ export function createServer(
   documents.listen(connection);
 
   documents.onDidChangeContent(({ document }) => {
-    solidityMap.set(document.uri, new Solidity(document));
+    const result = compile(document);
+    if (result.length) {
+      solidityMap.set(document.uri, new Solidity(document, result));
+    }
     setTimeout(() => require("prettier"), 0);
   });
 

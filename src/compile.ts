@@ -1,7 +1,8 @@
-import { readFileSync, accessSync } from "fs";
+import { accessSync, readFileSync } from "fs";
 import { join } from "path";
 // @ts-ignore
 import solc from "solc";
+import { SourceUnit } from "solidity-ast";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Diagnostic,
@@ -10,14 +11,11 @@ import {
 } from "vscode-languageserver/node";
 import { connection, options, rootPath } from ".";
 
-export function compile(document: TextDocument) {
+export function compile(document: TextDocument): SourceUnit[] {
   const input = {
     language: "Solidity",
     sources: { [document.uri]: { content: document.getText() } },
-    settings: {
-      outputSelection: { "*": { "": ["ast"] } },
-      parserErrorRecovery: true,
-    },
+    settings: { outputSelection: { "*": { "": ["ast"] } } },
   };
   const output = solc.compile(JSON.stringify(input), {
     import(path: string) {
@@ -33,7 +31,7 @@ export function compile(document: TextDocument) {
       }
     },
   });
-  const { sources, errors = [] } = JSON.parse(output);
+  const { sources = {}, errors = [] } = JSON.parse(output);
   showErrors(document, errors);
   return Object.values(sources).map((i: any) => i.ast);
 }
@@ -60,7 +58,7 @@ export function getAbsoluteUri(path: string) {
 export function showErrors(document: TextDocument, errors: any[]) {
   const diagnostics: Diagnostic[] = [];
   for (const error of errors) {
-    const { start, end } = error.sourceLocation;
+    const { start = 0, end = 0 } = error.sourceLocation ?? {};
     const diagnostic: Diagnostic = {
       severity:
         error.severity == "error"

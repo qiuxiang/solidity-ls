@@ -1,11 +1,10 @@
-import { access } from "fs/promises";
 import { join } from "path";
 import {
   DocumentFormattingParams,
-  TextEdit,
   Range,
+  TextEdit,
 } from "vscode-languageserver";
-import { documents, extensionPath } from ".";
+import { documents } from ".";
 
 export function onFormatting({
   textDocument: { uri },
@@ -13,16 +12,10 @@ export function onFormatting({
   const document = documents.get(uri);
   if (!document) return [];
   const pluginName = "prettier-plugin-solidity";
-  let pluginPath = join(extensionPath, "node_modules", pluginName);
-  try {
-    access(pluginPath);
-  } catch (_) {
-    pluginPath = join(extensionPath, "..", pluginName);
-  }
   const { format, resolveConfig } = require("prettier");
   const formatted = format(document.getText(), {
     parser: "solidity-parse",
-    plugins: [pluginPath],
+    plugins: [join(__dirname, "..", "node_modules", pluginName)],
     ...resolveConfig.sync(document.uri),
   });
   return [

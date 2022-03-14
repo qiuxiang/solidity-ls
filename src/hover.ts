@@ -1,7 +1,7 @@
-import { TypeName, VariableDeclaration } from "solidity-ast";
+import { ImportDirective, TypeName, VariableDeclaration } from "solidity-ast";
 import { Hover, HoverParams } from "vscode-languageserver/node";
 import { documents, solidityMap } from ".";
-import { AstNodeData } from "./parse";
+import { AstNodeData, DefinitionNode } from "./parse";
 
 export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const document = documents.get(textDocument.uri);
@@ -11,12 +11,9 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const node = solidity?.getDefinition(document, position);
   if (!node) return null;
   const contents: Hover["contents"] = [];
-  if (node.nodeType == "VariableDeclaration") {
-    contents.push(createContent(getVariableDeclaration(node)));
-  } else if (node.nodeType == "StructDefinition") {
-    contents.push(createContent(getStructDefinition(node)));
-  } else if (node.nodeType == "FunctionDefinition") {
-    contents.push(createContent(getFunctionDefinition(node)));
+  const definitionInfo = getDefinitionInfo(node);
+  if (definitionInfo) {
+    contents.push(createContent(definitionInfo));
   }
 
   const parent = node.parent!;
@@ -33,6 +30,18 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
 
 function createContent(value: string) {
   return { language: "solidity", value };
+}
+
+export function getDefinitionInfo(
+  node: DefinitionNode | (ImportDirective & AstNodeData)
+) {
+  if (node.nodeType == "VariableDeclaration") {
+    return getVariableDeclaration(node);
+  } else if (node.nodeType == "StructDefinition") {
+    return getStructDefinition(node);
+  } else if (node.nodeType == "FunctionDefinition") {
+    return getFunctionDefinition(node);
+  }
 }
 
 function getVariableDeclaration(node: VariableDeclaration & AstNodeData) {

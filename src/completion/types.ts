@@ -1,17 +1,4 @@
-import { CompletionParams } from "vscode-languageserver";
-import { documents, solidityMap } from ".";
-
-export async function onCompletion({ textDocument, position }: CompletionParams) {
-  let document = documents.get(textDocument.uri);
-  if (!document) return null;
-  const solidity = solidityMap.get(document.uri);
-  if (!solidity) return null;
-  const nodes = solidity.getSelectedNodes(document, position);
-  return [];
-}
-
 const fixedBytes = [
-  "bytes",
   "bytes1",
   "bytes2",
   "bytes3",
@@ -129,3 +116,5 @@ const elementaryTypes = [
   "fixed",
   "ufixed",
 ];
+
+export default elementaryTypes.map((label) => ({ label }));
