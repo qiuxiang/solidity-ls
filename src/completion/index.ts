@@ -30,11 +30,19 @@ export async function onCompletion({
         items = items.concat(completions.address);
       }
     } else if (node?.nodeType == "Identifier") {
-      if (node.name == "msg") {
-      }
+      const completionsMap = new Map([
+        ["block", completions.block],
+        ["msg", completions.msg],
+        ["tx", completions.tx],
+      ]);
+      items = items.concat(completionsMap.get(node.name) ?? []);
     }
   } else {
-    items = [...completions.elementaryType, ...completions.keyword];
+    items = [
+      ...completions.globalSymbol,
+      ...completions.elementaryType,
+      ...completions.keyword,
+    ];
     for (const node of nodes) {
       switch (node.nodeType) {
         case "ContractDefinition":
