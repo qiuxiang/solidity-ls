@@ -23,6 +23,18 @@ export interface ASTNodeData {
   srcEnd?: number;
 }
 
+export type ASTNode = (
+  | Expression
+  | Statement
+  | SourceUnit
+  | DefinitionNode
+  | TypeName
+  | SourceUnit["nodes"][0]
+  | ContractDefinition["nodes"][0]
+  | IdentifierPath
+) &
+  ASTNodeData;
+
 export type Definition =
   | ContractDefinition
   | EnumDefinition
@@ -36,18 +48,6 @@ export type Definition =
   | UserDefinedValueTypeDefinition;
 
 export type DefinitionNode = Definition & ASTNodeData;
-
-export type ASTNode = (
-  | Expression
-  | Statement
-  | SourceUnit
-  | DefinitionNode
-  | TypeName
-  | SourceUnit["nodes"][0]
-  | ContractDefinition["nodes"][0]
-  | IdentifierPath
-) &
-  ASTNodeData;
 
 export function parse(
   node: ASTNode,
