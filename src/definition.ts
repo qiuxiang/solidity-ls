@@ -3,7 +3,7 @@ import { DefinitionParams, Location, Range } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { documents, solidityMap } from ".";
 import { getAbsolutePath, getAbsoluteUri } from "./compile";
-import { AstNode } from "./parse";
+import { ASTNode } from "./parse";
 
 export async function onDefinition({
   textDocument,
@@ -15,8 +15,8 @@ export async function onDefinition({
   const solidity = solidityMap.get(document.uri);
   if (!solidity) return null;
 
-  let node: AstNode | undefined;
-  node = solidity.getSelectedNodes(document, position)[0];
+  let node: ASTNode | undefined;
+  node = solidity.getCurrentNodes(document, position)[0];
   if (!node) return null;
 
   if (node.nodeType == "ImportDirective") {

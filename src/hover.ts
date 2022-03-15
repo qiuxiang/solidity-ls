@@ -1,7 +1,7 @@
 import { ImportDirective, TypeName, VariableDeclaration } from "solidity-ast";
 import { Hover, HoverParams } from "vscode-languageserver/node";
 import { documents, solidityMap } from ".";
-import { AstNodeData, DefinitionNode } from "./parse";
+import { ASTNodeData, DefinitionNode } from "./parse";
 
 export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const document = documents.get(textDocument.uri);
@@ -33,7 +33,7 @@ function createContent(value: string) {
 }
 
 export function getDefinitionInfo(
-  node: DefinitionNode | (ImportDirective & AstNodeData)
+  node: DefinitionNode | (ImportDirective & ASTNodeData)
 ) {
   if (node.nodeType == "VariableDeclaration") {
     return getVariableDeclaration(node);
@@ -45,7 +45,7 @@ export function getDefinitionInfo(
 }
 
 function getVariableDeclaration(
-  node: VariableDeclaration & AstNodeData,
+  node: VariableDeclaration & ASTNodeData,
   struct = false
 ) {
   const { typeName } = node;

@@ -3,29 +3,27 @@ import {
   ContractDefinition,
   EnumDefinition,
   ErrorDefinition,
+  EventDefinition,
   Expression,
   FunctionDefinition,
-  Identifier,
   IdentifierPath,
-  MemberAccess,
+  ModifierDefinition,
   SourceUnit,
   Statement,
   StructDefinition,
   TypeName,
-  UserDefinedTypeName,
   UserDefinedValueTypeDefinition,
-  UsingForDirective,
   VariableDeclaration,
 } from "solidity-ast";
 
-export interface AstNodeData {
+export interface ASTNodeData {
   root?: SourceUnit;
-  parent?: AstNode;
+  parent?: ASTNode;
   srcStart?: number;
   srcEnd?: number;
 }
 
-export type DefinitionNode = (
+export type Definition =
   | ContractDefinition
   | EnumDefinition
   | ErrorDefinition
@@ -33,14 +31,13 @@ export type DefinitionNode = (
   | StructDefinition
   | UserDefinedValueTypeDefinition
   | VariableDeclaration
-  | Exclude<ContractDefinition["nodes"][0], UsingForDirective>
-) &
-  AstNodeData;
+  | EventDefinition
+  | ModifierDefinition
+  | UserDefinedValueTypeDefinition;
 
-export type IdentifierNode = (Identifier | MemberAccess | UserDefinedTypeName) &
-  AstNodeData;
+export type DefinitionNode = Definition & ASTNodeData;
 
-export type AstNode = (
+export type ASTNode = (
   | Expression
   | Statement
   | SourceUnit
@@ -50,15 +47,15 @@ export type AstNode = (
   | ContractDefinition["nodes"][0]
   | IdentifierPath
 ) &
-  AstNodeData;
+  ASTNodeData;
 
 export function parse(
-  node: AstNode,
-  root: AstNode,
-  definitions: AstNode[],
+  node: ASTNode,
+  root: ASTNode,
+  definitions: ASTNode[],
   scopes: Map<number, DefinitionNode[]>,
-  nodes: AstNode[],
-  nodeMap: Map<number, AstNode>
+  nodes: ASTNode[],
+  nodeMap: Map<number, ASTNode>
 ) {
   node.root = <SourceUnit>root;
   const position = node.src.split(":").map((i: string) => parseInt(i));
@@ -66,7 +63,7 @@ export function parse(
   node.srcEnd = position[0] + position[1];
   nodes.push(node);
   nodeMap.set(node.id, node);
-  let children: (AstNode | null | undefined)[] = [];
+  let children: (ASTNode | null | undefined)[] = [];
   switch (node.nodeType) {
     case "ContractDefinition":
     case "StructDefinition":
@@ -165,6 +162,9 @@ export function parse(
       break;
     case "UncheckedBlock":
       children = node.statements;
+      break;
+    case "Mapping":
+      children = [node.keyType, node.valueType];
       break;
   }
   for (const child of children) {
