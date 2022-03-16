@@ -63,7 +63,7 @@ function getVariableDeclaration(
   if (node.parent!.nodeType == "StructDefinition" && !struct) {
     declaration = `(member) ${declaration}`;
   }
-  return `${declaration} ${node.name}`;
+  return `${declaration}${node.name ? " " + node.name : ""}`;
 }
 
 function getTypeName(type: TypeName): string {

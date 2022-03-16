@@ -1,4 +1,3 @@
-import { ElementaryTypeNameExpression } from "solidity-ast";
 import {
   CompletionItem,
   CompletionItemKind,
@@ -24,19 +23,8 @@ export async function onCompletion({
   let items = <CompletionItem[]>[];
   if (context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
     const node = nodes[0];
-    if (node?.nodeType == "FunctionCall" && node.kind == "typeConversion") {
-      const expression = node.expression as ElementaryTypeNameExpression;
-      if (expression.typeName.name == "address") {
-        items = items.concat(completions.address);
-      }
-    } else if (node?.nodeType == "Identifier") {
-      const completionsMap = new Map([
-        ["block", completions.block],
-        ["msg", completions.msg],
-        ["tx", completions.tx],
-      ]);
-      items = items.concat(completionsMap.get(node.name) ?? []);
-    }
+    const type = (<any>node)?.typeDescriptions?.typeString;
+    items = items.concat(completionsMap.get(type) ?? []);
   } else {
     items = [
       ...completions.globalSymbol,
@@ -86,4 +74,14 @@ const kindMap = new Map([
   ["StructDefinition", CompletionItemKind.Struct],
   ["EnumDefinition", CompletionItemKind.Enum],
   ["EnumValue", CompletionItemKind.EnumMember],
+]);
+
+const completionsMap = new Map<string, CompletionItem[]>([
+  ["block", completions.block],
+  ["msg", completions.msg],
+  ["tx", completions.tx],
+  ["abi", completions.abi],
+  ["bytes", completions.bytes],
+  ["address", completions.address],
+  ["address payable", completions.addressPayable],
 ]);

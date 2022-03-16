@@ -1,5 +1,9 @@
+export { default as abi } from "./abi";
 export { default as address } from "./address";
+export { default as addressPayable } from "./address-payable";
 export { default as block } from "./block";
+export { default as bytes } from "./bytes";
+export { default as contract } from "./contract";
 export { default as elementaryType } from "./elementary-type";
 export { default as globalSymbol } from "./global-symbol";
 export { default as keyword } from "./keyword";

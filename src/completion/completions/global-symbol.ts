@@ -4,17 +4,17 @@ export default [
   {
     label: "msg",
     documentation: "message",
-    kind: CompletionItemKind.Variable,
+    kind: CompletionItemKind.Module,
   },
   {
     label: "block",
     documentation: "current block",
-    kind: CompletionItemKind.Variable,
+    kind: CompletionItemKind.Module,
   },
   {
     label: "tx",
     documentation: "current transaction",
-    kind: CompletionItemKind.Variable,
+    kind: CompletionItemKind.Module,
   },
   {
     label: "blockhash",
@@ -28,5 +28,10 @@ export default [
     detail: "gasleft() returns (uint256)",
     documentation: "remaining gas",
     kind: CompletionItemKind.Function,
+  },
+  {
+    label: "abi",
+    documentation: "ABI encoding and decoding",
+    kind: CompletionItemKind.Module,
   },
 ];
