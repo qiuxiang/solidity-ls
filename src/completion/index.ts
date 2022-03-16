@@ -4,7 +4,7 @@ import {
   CompletionParams,
   CompletionTriggerKind,
 } from "vscode-languageserver";
-import { documents, solidityMap } from "..";
+import { solidityMap } from "..";
 import { getDefinitionInfo } from "../hover";
 import { DefinitionNode } from "../parse";
 import * as completions from "./completions";
@@ -15,11 +15,9 @@ export async function onCompletion({
   context,
 }: CompletionParams) {
   position.character -= 1;
-  let document = documents.get(textDocument.uri);
-  if (!document) return null;
-  const solidity = solidityMap.get(document.uri);
+  const solidity = solidityMap.get(textDocument.uri);
   if (!solidity) return null;
-  const nodes = solidity.getCurrentNodes(document, position);
+  const nodes = solidity.getCurrentNodes(position);
   let items = <CompletionItem[]>[];
   if (context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
     const node = nodes[0];

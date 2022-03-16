@@ -1,6 +1,6 @@
-import { ImportDirective, SourceUnit } from "solidity-ast";
+import { SourceUnit } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
-import { ASTNode, ASTNodeData, DefinitionNode, parse } from "./parse";
+import { ASTNode, DefinitionNode, ImportNode, parse } from "./parse";
 
 export class Solidity {
   document: TextDocument;
@@ -27,11 +27,8 @@ export class Solidity {
     }
   }
 
-  getDefinition(
-    document: TextDocument,
-    position: Position
-  ): DefinitionNode | (ImportDirective & ASTNodeData) | null {
-    const node = this.getCurrentNodes(document, position)[0];
+  getDefinition(position: Position): DefinitionNode | ImportNode | null {
+    const node = this.getCurrentNodes(position)[0];
     if (!node) return null;
     if (node.nodeType == "ImportDirective") {
       return node;
@@ -42,9 +39,9 @@ export class Solidity {
     return null;
   }
 
-  getCurrentNodes(document: TextDocument, position: Position): ASTNode[] {
-    const offset = document.offsetAt(position);
-    const nodes = this.nodes.get(document.uri);
+  getCurrentNodes(position: Position): ASTNode[] {
+    const offset = this.document.offsetAt(position);
+    const nodes = this.nodes.get(this.document.uri);
     if (!nodes) return [];
     const selected: ASTNode[] = [];
     for (let i = nodes.length - 1; i >= 0; i--) {

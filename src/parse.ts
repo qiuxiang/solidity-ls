@@ -7,6 +7,7 @@ import {
   Expression,
   FunctionDefinition,
   IdentifierPath,
+  ImportDirective,
   ModifierDefinition,
   SourceUnit,
   Statement,
@@ -48,6 +49,7 @@ export type Definition =
   | UserDefinedValueTypeDefinition;
 
 export type DefinitionNode = Definition & ASTNodeData;
+export type ImportNode = ImportDirective & ASTNodeData;
 
 export function parse(
   node: ASTNode,
@@ -94,6 +96,9 @@ export function parse(
       children = node.members;
       break;
     case "FunctionDefinition":
+      if (node.kind == "constructor") {
+        Reflect.set(nodeMap.get(node.scope)!, "constructor", node);
+      }
       children = [
         ...node.parameters.parameters,
         ...node.modifiers.map((i) => i.modifierName),

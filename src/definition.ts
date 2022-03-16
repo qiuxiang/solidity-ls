@@ -16,7 +16,7 @@ export async function onDefinition({
   if (!solidity) return null;
 
   let node: ASTNode | undefined;
-  node = solidity.getCurrentNodes(document, position)[0];
+  node = solidity.getCurrentNodes(position)[0];
   if (!node) return null;
 
   if (node.nodeType == "ImportDirective") {
