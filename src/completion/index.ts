@@ -1,4 +1,9 @@
 import {
+  Identifier,
+  UserDefinedTypeName,
+  VariableDeclaration,
+} from "solidity-ast";
+import {
   CompletionItem,
   CompletionItemKind,
   CompletionParams,
@@ -21,8 +26,20 @@ export async function onCompletion({
   let items = <CompletionItem[]>[];
   if (context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
     const node = nodes[0];
-    const type = (<any>node)?.typeDescriptions?.typeString;
+    const type = <string>(<any>node)?.typeDescriptions?.typeString;
     items = items.concat(completionsMap.get(type) ?? []);
+    if (type.startsWith("contract ")) {
+      let ref = (<Identifier>node).referencedDeclaration;
+      if (ref) {
+        const { typeName } = <VariableDeclaration>solidity.nodeMap.get(ref);
+        ref = (<UserDefinedTypeName>typeName).referencedDeclaration;
+      } else if (node.nodeType == "FunctionCall") {
+        ref = (<Identifier>node.expression).referencedDeclaration;
+      }
+      for (const node of solidity.getAccesableNodes(ref!)) {
+        items.push(createCompletionItem(node));
+      }
+    }
   } else {
     items = [
       ...completions.globalSymbol,
@@ -33,21 +50,21 @@ export async function onCompletion({
       switch (node.nodeType) {
         case "ContractDefinition":
           for (const id of node.linearizedBaseContracts) {
-            for (const node of solidity.scopes.get(id) ?? []) {
+            for (const node of solidity.getAccesableNodes(id)) {
               items.push(createCompletionItem(node));
             }
           }
           break;
         case "FunctionDefinition":
-          for (const item of solidity.scopes.get(node.id) ?? []) {
+          for (const item of solidity.getAccesableNodes(node.id)) {
             items.push(createCompletionItem(item));
           }
-          for (const item of solidity.scopes.get(node.body!.id) ?? []) {
+          for (const item of solidity.getAccesableNodes(node.body!.id)) {
             items.push(createCompletionItem(item));
           }
           break;
         case "Block":
-          for (const item of solidity.scopes.get(node.id) ?? []) {
+          for (const item of solidity.getAccesableNodes(node.id)) {
             items.push(createCompletionItem(item));
           }
           break;

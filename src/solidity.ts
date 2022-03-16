@@ -52,4 +52,19 @@ export class Solidity {
     }
     return selected;
   }
+
+  getAccesableNodes(id: number) {
+    return (this.scopes.get(id) ?? []).filter((node) => {
+      if (
+        node.nodeType == "VariableDeclaration" &&
+        node.visibility == "private"
+      ) {
+        return false;
+      }
+      if (node.nodeType == "FunctionDefinition" && node.kind == "constructor") {
+        return false;
+      }
+      return true;
+    });
+  }
 }
