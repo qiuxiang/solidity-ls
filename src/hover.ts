@@ -13,7 +13,7 @@ export function onHover({ textDocument, position }: HoverParams): Hover | null {
   const solidity = solidityMap.get(textDocument.uri);
   if (!solidity) return null;
 
-  const node = solidity?.getDefinition(position);
+  const node = solidity?.getDefinitionNode(position);
   if (!node) return null;
 
   const contents: Hover["contents"] = [];

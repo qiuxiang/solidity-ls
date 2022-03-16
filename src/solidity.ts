@@ -13,9 +13,11 @@ export class Solidity {
   constructor(document: TextDocument, sources: SourceUnit[]) {
     this.document = document;
     for (const root of sources) {
-      let uri = root.absolutePath;
+      const uri = root.absolutePath;
       this.astMap.set(uri, root);
-      if (!this.nodes.has(uri)) this.nodes.set(uri, []);
+      if (!this.nodes.has(uri)) {
+        this.nodes.set(uri, []);
+      }
       parse(
         root,
         root,
@@ -27,7 +29,7 @@ export class Solidity {
     }
   }
 
-  getDefinition(position: Position): DefinitionNode | ImportNode | null {
+  getDefinitionNode(position: Position): DefinitionNode | ImportNode | null {
     const node = this.getCurrentNodes(position)[0];
     if (!node) return null;
     if (node.nodeType == "ImportDirective") {
