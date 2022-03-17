@@ -11,18 +11,20 @@ import { DefinitionNode } from "../parse";
 import { Solidity } from "../solidity";
 import * as completions from "./completions";
 
+let items = <CompletionItem[]>[];
+
 export async function onCompletion({
   textDocument,
   position,
   context,
 }: CompletionParams) {
+  items = [];
   position.character -= 1;
   const solidity = solidityMap.get(textDocument.uri);
   if (!solidity) return null;
   const nodes = solidity.getCurrentNodes(position);
-  let items = <CompletionItem[]>[];
 
-  // struct constructor completions
+  // struct constructor completion
   const node = nodes[0];
   if (node) {
     if (
@@ -30,7 +32,7 @@ export async function onCompletion({
       node.kind == "structConstructorCall"
     ) {
       const nodeId = (<Identifier>node.expression).referencedDeclaration!;
-      addCompletionItems(items, solidity, nodeId);
+      addCompletionItems(solidity, nodeId);
       return items;
     }
   }
@@ -44,11 +46,11 @@ export async function onCompletion({
     if (typeIdentifier.startsWith("t_array")) {
       items = items.concat(completions.array);
     } else {
-      // user defined type completions
+      // user defined type completion
       const match = typeIdentifier.match(/\$(\d+)/);
       if (match) {
         const nodeId = parseInt(match[1]);
-        addCompletionItems(items, solidity, nodeId);
+        addCompletionItems(solidity, nodeId);
       }
     }
   } else {
@@ -61,28 +63,31 @@ export async function onCompletion({
       switch (node.nodeType) {
         case "ContractDefinition":
           for (const id of node.linearizedBaseContracts) {
-            addCompletionItems(items, solidity, id);
+            addCompletionItems(solidity, id);
           }
           break;
         case "FunctionDefinition":
-          addCompletionItems(items, solidity, node.id);
-          addCompletionItems(items, solidity, node.body!.id);
+          addCompletionItems(solidity, node.id);
+          addCompletionItems(solidity, node.body!.id);
           break;
         case "Block":
         case "SourceUnit":
-          addCompletionItems(items, solidity, node.id);
+          addCompletionItems(solidity, node.id);
           break;
+      }
+    }
+
+    // contracts completion
+    for (const node of solidity.definitions) {
+      if (node.nodeType == "ContractDefinition") {
+        items.push(createCompletionItem(node));
       }
     }
   }
   return items;
 }
 
-function addCompletionItems(
-  items: CompletionItem[],
-  solidity: Solidity,
-  nodeId: number
-) {
+function addCompletionItems(solidity: Solidity, nodeId: number) {
   for (const node of solidity.getAccesableNodes(nodeId)) {
     items.push(createCompletionItem(node));
   }
@@ -107,6 +112,7 @@ const kindMap = new Map([
   ["StructDefinition", CompletionItemKind.Struct],
   ["EnumDefinition", CompletionItemKind.Enum],
   ["EnumValue", CompletionItemKind.EnumMember],
+  ["ContractDefinition", CompletionItemKind.Class],
 ]);
 
 const completionsMap = new Map<string, CompletionItem[]>([

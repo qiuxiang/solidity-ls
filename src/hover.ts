@@ -129,11 +129,10 @@ function getContractDefinition(node: ContractDefinition) {
   let value = `contract ${node.name}(`;
   const constructor = <FunctionDefinition>Reflect.get(node, "constructor");
   if (constructor) {
-    value += constructor.parameters.parameters
+    value += constructor.parameters?.parameters
       .map((param: any) => getVariableDeclaration(param))
       .join(", ");
   }
-  // TODO: contstructor parameters
   value += ")";
   return value;
 }
