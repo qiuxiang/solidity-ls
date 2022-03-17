@@ -14,7 +14,10 @@ import { connection, options, rootPath } from ".";
 export function compile(document: TextDocument): SourceUnit[] {
   const input = {
     language: "Solidity",
-    sources: { [document.uri]: { content: document.getText() } },
+    sources: {
+      global: { content: require("./global.sol") },
+      [document.uri]: { content: document.getText() },
+    },
     settings: { outputSelection: { "*": { "": ["ast"] } } },
   };
   const output = solc.compile(JSON.stringify(input), {

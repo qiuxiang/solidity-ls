@@ -55,8 +55,8 @@ export class Solidity {
     return selected;
   }
 
-  getAccesableNodes(id: number) {
-    return (this.scopes.get(id) ?? []).filter((node) => {
+  getAccesableNodes(nodeId: number) {
+    return (this.scopes.get(nodeId) ?? []).filter((node) => {
       if (
         node.nodeType == "VariableDeclaration" &&
         node.visibility == "private"
@@ -64,6 +64,9 @@ export class Solidity {
         return false;
       }
       if (node.nodeType == "FunctionDefinition" && node.kind == "constructor") {
+        return false;
+      }
+      if (node.nodeType == "ContractDefinition") {
         return false;
       }
       return true;

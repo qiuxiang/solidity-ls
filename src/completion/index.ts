@@ -12,6 +12,7 @@ import {
 import { solidityMap } from "..";
 import { getDefinitionInfo } from "../hover";
 import { DefinitionNode } from "../parse";
+import { Solidity } from "../solidity";
 import * as completions from "./completions";
 
 export async function onCompletion({
@@ -26,19 +27,25 @@ export async function onCompletion({
   let items = <CompletionItem[]>[];
   if (context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
     const node = nodes[0];
-    const type = <string>(<any>node)?.typeDescriptions?.typeString;
-    items = items.concat(completionsMap.get(type) ?? []);
-    if (type.startsWith("contract ")) {
-      let ref = (<Identifier>node).referencedDeclaration;
-      if (ref) {
-        const { typeName } = <VariableDeclaration>solidity.nodeMap.get(ref);
-        ref = (<UserDefinedTypeName>typeName).referencedDeclaration;
+    const { typeString, typeIdentifier } = (<Identifier>node)?.typeDescriptions;
+    if (!typeString || !typeIdentifier) return [];
+
+    items = items.concat(completionsMap.get(typeString) ?? []);
+    if (typeString.startsWith("contract ")) {
+      let nodeId = (<Identifier>node).referencedDeclaration;
+      if (nodeId) {
+        const { typeName } = <VariableDeclaration>solidity.nodeMap.get(nodeId);
+        nodeId = (<UserDefinedTypeName>typeName).referencedDeclaration;
       } else if (node.nodeType == "FunctionCall") {
-        ref = (<Identifier>node.expression).referencedDeclaration;
+        nodeId = (<Identifier>node.expression).referencedDeclaration;
       }
-      for (const node of solidity.getAccesableNodes(ref!)) {
-        items.push(createCompletionItem(node));
-      }
+      addCompletionItems(items, solidity, nodeId!);
+    }
+    if (typeIdentifier.startsWith("t_array")) {
+      const definitions =
+        solidity.scopes.get(solidity.astMap.get("global")!.id) ?? [];
+      const nodeId = definitions.find((i) => i.name == "__Array")!.id;
+      addCompletionItems(items, solidity, nodeId);
     }
   } else {
     items = [
@@ -50,23 +57,16 @@ export async function onCompletion({
       switch (node.nodeType) {
         case "ContractDefinition":
           for (const id of node.linearizedBaseContracts) {
-            for (const node of solidity.getAccesableNodes(id)) {
-              items.push(createCompletionItem(node));
-            }
+            addCompletionItems(items, solidity, id);
           }
           break;
         case "FunctionDefinition":
-          for (const item of solidity.getAccesableNodes(node.id)) {
-            items.push(createCompletionItem(item));
-          }
-          for (const item of solidity.getAccesableNodes(node.body!.id)) {
-            items.push(createCompletionItem(item));
-          }
+          addCompletionItems(items, solidity, node.id);
+          addCompletionItems(items, solidity, node.body!.id);
           break;
         case "Block":
-          for (const item of solidity.getAccesableNodes(node.id)) {
-            items.push(createCompletionItem(item));
-          }
+        case "SourceUnit":
+          addCompletionItems(items, solidity, node.id);
           break;
       }
     }
@@ -74,8 +74,23 @@ export async function onCompletion({
   return items;
 }
 
+function addCompletionItems(
+  items: CompletionItem[],
+  solidity: Solidity,
+  nodeId: number
+) {
+  for (const node of solidity.getAccesableNodes(nodeId)) {
+    items.push(createCompletionItem(node));
+  }
+}
+
 function createCompletionItem(node: DefinitionNode) {
-  const item = CompletionItem.create(node.name);
+  let { name } = node;
+  if (node.nodeType == "FunctionDefinition") {
+    if (!node.parameters.parameters.length) name = name += "()";
+    else name = name += "(";
+  }
+  const item = CompletionItem.create(name);
   item.kind = kindMap.get(node.nodeType);
   item.documentation = Reflect.get(node, "documentation")?.text;
   item.detail = getDefinitionInfo(node);
@@ -97,6 +112,7 @@ const completionsMap = new Map<string, CompletionItem[]>([
   ["tx", completions.tx],
   ["abi", completions.abi],
   ["bytes", completions.bytes],
+  ["string", completions.bytes],
   ["address", completions.address],
   ["address payable", completions.addressPayable],
 ]);
