@@ -21,8 +21,21 @@ export async function onCompletion({
   if (!solidity) return null;
   const nodes = solidity.getCurrentNodes(position);
   let items = <CompletionItem[]>[];
+
+  // struct constructor completions
+  const node = nodes[0];
+  if (node) {
+    if (
+      node.nodeType == "FunctionCall" &&
+      node.kind == "structConstructorCall"
+    ) {
+      const nodeId = (<Identifier>node.expression).referencedDeclaration!;
+      addCompletionItems(items, solidity, nodeId);
+      return items;
+    }
+  }
+
   if (context?.triggerKind == CompletionTriggerKind.TriggerCharacter) {
-    const node = nodes[0];
     const { typeString, typeIdentifier } = (<Identifier>node)?.typeDescriptions;
     if (!typeString || !typeIdentifier) return [];
 
