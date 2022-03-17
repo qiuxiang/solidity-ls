@@ -1,8 +1,4 @@
-import {
-  Identifier,
-  UserDefinedTypeName,
-  VariableDeclaration,
-} from "solidity-ast";
+import { Identifier } from "solidity-ast";
 import {
   CompletionItem,
   CompletionItemKind,
@@ -31,21 +27,16 @@ export async function onCompletion({
     if (!typeString || !typeIdentifier) return [];
 
     items = items.concat(completionsMap.get(typeString) ?? []);
-    if (typeString.startsWith("contract ")) {
-      let nodeId = (<Identifier>node).referencedDeclaration;
-      if (nodeId) {
-        const { typeName } = <VariableDeclaration>solidity.nodeMap.get(nodeId);
-        nodeId = (<UserDefinedTypeName>typeName).referencedDeclaration;
-      } else if (node.nodeType == "FunctionCall") {
-        nodeId = (<Identifier>node.expression).referencedDeclaration;
-      }
-      addCompletionItems(items, solidity, nodeId!);
-    }
+
     if (typeIdentifier.startsWith("t_array")) {
-      const definitions =
-        solidity.scopes.get(solidity.astMap.get("global")!.id) ?? [];
-      const nodeId = definitions.find((i) => i.name == "__Array")!.id;
-      addCompletionItems(items, solidity, nodeId);
+      items = items.concat(completions.array);
+    } else {
+      // user defined type completions
+      const match = typeIdentifier.match(/\$(\d+)/);
+      if (match) {
+        const nodeId = parseInt(match[1]);
+        addCompletionItems(items, solidity, nodeId);
+      }
     }
   } else {
     items = [
@@ -87,8 +78,7 @@ function addCompletionItems(
 function createCompletionItem(node: DefinitionNode) {
   let { name } = node;
   if (node.nodeType == "FunctionDefinition") {
-    if (!node.parameters.parameters.length) name = name += "()";
-    else name = name += "(";
+    name = name += "()";
   }
   const item = CompletionItem.create(name);
   item.kind = kindMap.get(node.nodeType);
