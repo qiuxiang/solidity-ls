@@ -1,9 +1,16 @@
 {
+  "name": "solidity-ls",
   "main": "dist/index.js",
   "scripts": {
-    "esbuild": "esbuild --sourcemap --platform=node --bundle --external:./node_modules/* --outdir=dist",
+    "esbuild": "esbuild --sourcemap --platform=node --bundle --external:sol* --external:vscode* --external:prettier* --outdir=dist",
     "test": "npm run esbuild test/test.ts && node --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js",
     "build": "npm run esbuild src/index.ts --"
+  },
+  "files": [
+    "dist/index.js"
+  ],
+  "bin": {
+    "solidity-ls": "dist/index.js"
   },
   "dependencies": {
     "prettier": "^2.5.1",
