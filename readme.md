@@ -3,8 +3,8 @@
 
 # solidity-ls [![npm-badge]][npm]
 
-**This language server currently has no tolerance.**
-Means that some completions will only work if sources are no syntax error.
+**This language server has no tolerance.**
+Means that some features will only work if sources are no syntax error.
 
 For example:
 
@@ -13,7 +13,7 @@ For example:
 msg.
    ^
 
-// should work fine
+// should work
 msg.;
    ^
 ```
