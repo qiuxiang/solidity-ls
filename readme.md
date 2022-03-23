@@ -3,6 +3,8 @@
 
 # solidity-ls [![npm-badge]][npm]
 
+Solidity language server.
+
 ```
 npx solidity-ls --stdio
 ```
