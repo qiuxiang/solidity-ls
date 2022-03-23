@@ -1,4 +1,4 @@
-import { Identifier } from "solidity-ast";
+import { ContractDefinition, Identifier } from "solidity-ast";
 import {
   CompletionItem,
   CompletionItemKind,
@@ -50,7 +50,14 @@ export async function onCompletion({
       const match = typeIdentifier.match(/\$(\d+)/);
       if (match) {
         const nodeId = parseInt(match[1]);
-        addCompletionItems(solidity, nodeId);
+        if (typeIdentifier.startsWith("t_contract")) {
+          const node = <ContractDefinition>solidity.nodeMap.get(nodeId);
+          for (const id of node.linearizedBaseContracts) {
+            addCompletionItems(solidity, id);
+          }
+        } else {
+          addCompletionItems(solidity, nodeId);
+        }
       }
     }
   } else {
