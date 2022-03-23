@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import {
   Location,
   Position,
@@ -6,18 +7,14 @@ import {
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { documents, solidityMap } from ".";
+import { getAbsolutePath } from "./compile";
 import { ASTNode, IdentifierNode } from "./parse";
 
 export function onReferences({
   textDocument: { uri },
   position,
-}: ReferenceParams): Location[] {
-  const document = documents.get(uri);
-  if (!document) return [];
-
-  return getReferences(uri, position).map((i) => {
-    return Location.create(uri, getIdentifierRange(i, document));
-  });
+}: ReferenceParams) {
+  return getReferences(uri, position).map(getIdentifierLocation);
 }
 
 export function getReferences(
@@ -34,11 +31,38 @@ export function getReferences(
   );
 }
 
-export function getIdentifierRange(node: ASTNode, document: TextDocument) {
-  const name = Reflect.get(node, "memberName") ?? Reflect.get(node, "name");
-  const { srcStart, srcEnd } = node;
-  return Range.create(
-    document.positionAt(srcStart! + (srcEnd! - srcStart! - name.length)),
-    document.positionAt(srcEnd!)
+function getDocument({ root }: ASTNode) {
+  const document = documents.get(root!.absolutePath);
+  if (document) return document;
+
+  const path = getAbsolutePath(root!.absolutePath);
+  const content = readFileSync(path).toString();
+  return TextDocument.create("file://" + path, "solidity", 0, content);
+}
+
+export function getIdentifierLocation(node: ASTNode) {
+  const document = getDocument(node);
+  let { srcStart = 0, srcEnd = 0 } = node;
+  let name = "";
+  switch (node.nodeType) {
+    case "Identifier":
+    case "VariableDeclaration":
+    case "UserDefinedTypeName":
+      name = node.name ?? "";
+      break;
+    case "MemberAccess":
+      name = node.memberName;
+      break;
+  }
+  if (node.nodeType.match(/Definition/)) {
+    srcStart += node.nodeType.replace("Definition", "").length + 1;
+  }
+  if (name) {
+    srcStart += srcEnd - srcStart - name.length;
+  }
+  const range = Range.create(
+    document.positionAt(srcStart),
+    document.positionAt(srcEnd)
   );
+  return Location.create(document.uri, range);
 }
