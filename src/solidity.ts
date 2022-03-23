@@ -1,9 +1,16 @@
 import { SourceUnit } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
-import { ASTNode, DefinitionNode, ImportNode, parse } from "./parse";
+import {
+  ASTNode,
+  DefinitionNode,
+  IdentifierNode,
+  ImportNode,
+  parse,
+} from "./parse";
 
 export class Solidity {
   document: TextDocument;
+  identifiers: IdentifierNode[] = [];
   definitions: DefinitionNode[] = [];
   nodes = new Map<string, ASTNode[]>();
   scopes = new Map<number, DefinitionNode[]>();
@@ -21,6 +28,7 @@ export class Solidity {
       parse(
         root,
         root,
+        this.identifiers,
         this.definitions,
         this.scopes,
         this.nodes.get(uri)!,

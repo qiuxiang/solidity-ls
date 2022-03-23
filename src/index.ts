@@ -11,6 +11,7 @@ import { onCompletion } from "./completion";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
+import { onReferences } from "./references";
 import { onRename } from "./rename";
 import { Solidity } from "./solidity";
 
@@ -36,6 +37,7 @@ export function createServer(
   connection.onHover(onHover);
   connection.onCompletion(onCompletion);
   connection.onRenameRequest(onRename);
+  connection.onReferences(onReferences);
 
   connection.onDidChangeConfiguration(({ settings }) => {
     options = settings.solidity;

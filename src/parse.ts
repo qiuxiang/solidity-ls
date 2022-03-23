@@ -6,13 +6,16 @@ import {
   EventDefinition,
   Expression,
   FunctionDefinition,
+  Identifier,
   IdentifierPath,
   ImportDirective,
+  MemberAccess,
   ModifierDefinition,
   SourceUnit,
   Statement,
   StructDefinition,
   TypeName,
+  UserDefinedTypeName,
   UserDefinedValueTypeDefinition,
   VariableDeclaration,
 } from "solidity-ast";
@@ -50,10 +53,13 @@ export type Definition =
 
 export type DefinitionNode = Definition & ASTNodeData;
 export type ImportNode = ImportDirective & ASTNodeData;
+export type IdentifierNode = (Identifier | MemberAccess | UserDefinedTypeName) &
+  ASTNodeData;
 
 export function parse(
   node: ASTNode,
   root: ASTNode,
+  identifiers: ASTNode[],
   definitions: ASTNode[],
   scopes: Map<number, DefinitionNode[]>,
   nodes: ASTNode[],
@@ -83,6 +89,10 @@ export function parse(
       } else {
         scopes.set(scopeId, [node]);
       }
+    case "Identifier":
+    case "MemberAccess":
+    case "UserDefinedTypeName":
+      identifiers.push(node);
       break;
   }
   switch (node.nodeType) {
@@ -175,7 +185,7 @@ export function parse(
   for (const child of children) {
     if (!child) continue;
     child.parent = node;
-    parse(child, root, definitions, scopes, nodes, nodeMap);
+    parse(child, root, identifiers, definitions, scopes, nodes, nodeMap);
   }
 }
 
