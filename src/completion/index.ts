@@ -42,6 +42,9 @@ export async function onCompletion({
     if (!typeString || !typeIdentifier) return [];
 
     items = items.concat(completionsMap.get(typeString) ?? []);
+    if (node.nodeType == "ElementaryTypeNameExpression") {
+      items = items.concat(completionsMap.get(node.typeName.name) ?? []);
+    }
 
     if (typeIdentifier.startsWith("t_array")) {
       items = items.concat(completions.array);
@@ -128,7 +131,7 @@ const completionsMap = new Map<string, CompletionItem[]>([
   ["tx", completions.tx],
   ["abi", completions.abi],
   ["bytes", completions.bytes],
-  ["string", completions.bytes],
+  ["string", completions.string],
   ["address", completions.address],
   ["address payable", completions.addressPayable],
 ]);
