@@ -5,6 +5,8 @@
 
 Solidity language server.
 
+## Usage
+
 ```
 npx solidity-ls --stdio
 ```
