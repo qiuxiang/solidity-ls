@@ -3,7 +3,20 @@
 
 # solidity-ls [![npm-badge]][npm]
 
-Solidity language server.
+**This language server currently has no tolerance.**
+Means that some completions will only work if sources are no syntax error.
+
+For example:
+
+```solidity
+// should not work
+msg.
+   ^
+
+// should work fine
+msg.;
+   ^
+```
 
 ## Usage
 
