@@ -4,15 +4,16 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { documents, solidityMap } from ".";
 import { getAbsolutePath, getAbsoluteUri } from "./compile";
 import { ASTNode } from "./parse";
+import { getIdentifierRange } from "./references";
 
 export async function onDefinition({
-  textDocument,
+  textDocument: { uri },
   position,
 }: DefinitionParams) {
-  let document = documents.get(textDocument.uri);
+  let document = documents.get(uri);
   if (!document) return null;
 
-  const solidity = solidityMap.get(document.uri);
+  const solidity = solidityMap.get(uri);
   if (!solidity) return null;
 
   let node: ASTNode | undefined;
@@ -29,16 +30,10 @@ export async function onDefinition({
   }
 
   const targetUri = node.root!.absolutePath;
-  if (targetUri != document.uri) {
+  if (targetUri != uri) {
     const path = getAbsolutePath(decodeURIComponent(targetUri));
     const content = (await readFile(path)).toString();
     document = TextDocument.create("file://" + path, "solidity", 0, content);
   }
-  return Location.create(
-    document.uri,
-    Range.create(
-      document.positionAt(node.srcStart!),
-      document.positionAt(node.srcEnd!)
-    )
-  );
+  return Location.create(uri, getIdentifierRange(node, document));
 }
