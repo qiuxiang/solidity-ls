@@ -11,6 +11,7 @@ import { onCompletion } from "./completion";
 import { onDefinition } from "./definition";
 import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
+import { onRename } from "./rename";
 import { Solidity } from "./solidity";
 
 export let options = { includePath: "node_modules" };
@@ -34,6 +35,7 @@ export function createServer(
   connection.onDefinition(onDefinition);
   connection.onHover(onHover);
   connection.onCompletion(onCompletion);
+  connection.onRenameRequest(onRename);
 
   connection.onDidChangeConfiguration(({ settings }) => {
     options = settings.solidity;
@@ -48,6 +50,8 @@ export function createServer(
         documentFormattingProvider: true,
         definitionProvider: true,
         completionProvider: { triggerCharacters: ["."] },
+        renameProvider: true,
+        referencesProvider: true,
       },
     };
   });

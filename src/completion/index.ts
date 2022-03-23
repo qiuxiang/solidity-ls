@@ -23,8 +23,6 @@ export async function onCompletion({
   const solidity = solidityMap.get(textDocument.uri);
   if (!solidity) return null;
   const nodes = solidity.getCurrentNodes(position);
-
-  // struct constructor completion
   const node = nodes[0];
   if (node) {
     if (
