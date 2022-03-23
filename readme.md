@@ -1,5 +1,5 @@
-[npm]: https://www.npmjs.com/package/coc-solidity
-[npm-badge]: https://img.shields.io/npm/v/coc-solidity.svg
+[npm]: https://www.npmjs.com/package/solidity-ls
+[npm-badge]: https://img.shields.io/npm/v/solidity-ls.svg
 
 # solidity-ls [![npm-badge]][npm]
 
