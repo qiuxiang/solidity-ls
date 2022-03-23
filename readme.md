@@ -1,0 +1,3 @@
+```
+npx solidity-ls --stdio
+```
