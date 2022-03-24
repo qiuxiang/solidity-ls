@@ -53,7 +53,12 @@ export type Definition =
 
 export type DefinitionNode = Definition & ASTNodeData;
 export type ImportNode = ImportDirective & ASTNodeData;
-export type IdentifierNode = (Identifier | MemberAccess | UserDefinedTypeName) &
+export type IdentifierNode = (
+  | Identifier
+  | IdentifierPath
+  | MemberAccess
+  | UserDefinedTypeName
+) &
   ASTNodeData;
 
 export function parse(
@@ -92,6 +97,7 @@ export function parse(
     case "Identifier":
     case "MemberAccess":
     case "UserDefinedTypeName":
+    case "IdentifierPath":
       identifiers.push(node);
       break;
   }
@@ -112,6 +118,7 @@ export function parse(
       children = [
         ...node.parameters.parameters,
         ...node.modifiers.map((i) => i.modifierName),
+        ...(node.overrides?.overrides ?? []),
         ...node.returnParameters.parameters,
         ...getStatements(node.body),
       ];
