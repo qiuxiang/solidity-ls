@@ -1,5 +1,6 @@
 import { SourceUnit } from "solidity-ast";
 import { Position, TextDocument } from "vscode-languageserver-textdocument";
+import { getAbsolutePath } from "./compile";
 import {
   ASTNode,
   DefinitionNode,
@@ -51,7 +52,7 @@ export class Solidity {
 
   getCurrentNodes(position: Position): ASTNode[] {
     const offset = this.document.offsetAt(position);
-    const nodes = this.nodes.get(this.document.uri);
+    const nodes = this.nodes.get(getAbsolutePath(this.document.uri));
     if (!nodes) return [];
     const selected: ASTNode[] = [];
     for (let i = nodes.length - 1; i >= 0; i--) {

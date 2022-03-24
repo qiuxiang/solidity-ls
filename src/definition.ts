@@ -1,6 +1,5 @@
 import { DefinitionParams, Location, Range } from "vscode-languageserver";
-import { solidityMap } from ".";
-import { getAbsoluteUri } from "./compile";
+import { pathMap, solidityMap } from ".";
 import { ASTNode } from "./parse";
 import { getIdentifierLocation } from "./references";
 
@@ -16,7 +15,7 @@ export async function onDefinition({
   if (!node) return null;
 
   if (node.nodeType == "ImportDirective") {
-    const uri = getAbsoluteUri(node.absolutePath);
+    const uri = pathMap[node.absolutePath] ?? node.absolutePath;
     return Location.create(uri, Range.create(0, 0, 0, 0));
   } else {
     const ref = Reflect.get(node, "referencedDeclaration");

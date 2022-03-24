@@ -15,12 +15,16 @@ import { onReferences } from "./references";
 import { onRename } from "./rename";
 import { Solidity } from "./solidity";
 
-export let options = { includePath: "node_modules" };
+export let options = {
+  includePath: "node_modules",
+  remapping: <Record<string, string>>{},
+};
 export let rootPath = join(__dirname, "..");
 export let extensionPath: string;
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
 export const solidityMap = new Map<string, Solidity>();
+export const pathMap: Record<string, string> = {};
 
 export function createServer(
   input?: NodeJS.ReadableStream,

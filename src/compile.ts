@@ -1,4 +1,4 @@
-import { accessSync, readFileSync } from "fs";
+import { accessSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 // @ts-ignore
 import solc from "solc";
@@ -9,7 +9,7 @@ import {
   DiagnosticSeverity,
   Range,
 } from "vscode-languageserver/node";
-import { connection, options, rootPath } from ".";
+import { connection, options, pathMap, rootPath } from ".";
 
 export function compile(document: TextDocument): SourceUnit[] {
   const input = {
@@ -17,15 +17,28 @@ export function compile(document: TextDocument): SourceUnit[] {
     sources: { [document.uri]: { content: document.getText() } },
     settings: { outputSelection: { "*": { "": ["ast"] } } },
   };
+  const { remapping } = options;
   const output = solc.compile(JSON.stringify(input), {
     import(path: string) {
       try {
+        let absolutePath = path;
         if (path.startsWith("file://")) {
-          path = decodeURIComponent(path.substring(7));
+          absolutePath = decodeURIComponent(path.substring(7));
         } else {
-          path = getAbsolutePath(path);
+          absolutePath = getAbsolutePath(path);
+          if (!existsSync(absolutePath)) {
+            for (const key in remapping) {
+              if (path.startsWith(key)) {
+                absolutePath = getAbsolutePath(
+                  path.replace(key, remapping[key])
+                );
+                break;
+              }
+            }
+          }
         }
-        return { contents: readFileSync(path).toString() };
+        pathMap[path] = absolutePath;
+        return { contents: readFileSync(absolutePath).toString() };
       } catch ({ message }) {
         return { error: message };
       }
@@ -33,10 +46,17 @@ export function compile(document: TextDocument): SourceUnit[] {
   });
   const { sources = {}, errors = [] } = JSON.parse(output);
   showErrors(document, errors);
-  return Object.values(sources).map((i: any) => i.ast);
+  return Object.values(sources).map((i: any) => {
+    const ast = <SourceUnit>i.ast;
+    ast.absolutePath = getAbsolutePath(
+      pathMap[ast.absolutePath] ?? ast.absolutePath
+    );
+    return ast;
+  });
 }
 
 export function getAbsolutePath(path: string) {
+  if (path.startsWith("/")) return path;
   if (path.startsWith("file://")) {
     return decodeURIComponent(path.substring(7));
   }
