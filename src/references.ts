@@ -54,11 +54,11 @@ export function getIdentifierLocation(node: ASTNode) {
       name = node.memberName;
       break;
   }
-  if (node.nodeType.match(/Definition/)) {
-    srcStart += node.nodeType.replace("Definition", "").length + 1;
-  }
   if (name) {
     srcStart += srcEnd - srcStart - name.length;
+  } else if (node.nodeType.match(/Definition/)) {
+    srcStart += node.nodeType.replace("Definition", "").length + 1;
+    srcEnd = srcStart + Reflect.get(node, "name").length;
   }
   const range = Range.create(
     document.positionAt(srcStart),
