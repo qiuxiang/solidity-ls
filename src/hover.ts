@@ -52,7 +52,7 @@ export function getDefinitionInfo(node: DefinitionNode | ImportNode) {
   }
 }
 
-function getVariableDeclaration(
+export function getVariableDeclaration(
   node: VariableDeclaration & ASTNodeData,
   struct = false
 ) {
@@ -78,7 +78,7 @@ function getVariableDeclaration(
   return `${declaration}${node.name ? " " + node.name : ""}`;
 }
 
-function getTypeName(type: TypeName): string {
+export function getTypeName(type: TypeName): string {
   switch (type.nodeType) {
     case "ElementaryTypeName":
       return `${type.name}`;
@@ -94,7 +94,7 @@ function getTypeName(type: TypeName): string {
   }
 }
 
-function getStructDefinition(node: StructDefinition) {
+export function getStructDefinition(node: StructDefinition) {
   let value = `struct ${node.name} {\n`;
   for (const member of node.members) {
     value += `  ${getVariableDeclaration(member, true)};\n`;
@@ -103,7 +103,7 @@ function getStructDefinition(node: StructDefinition) {
   return value;
 }
 
-function getFunctionDefinition(node: FunctionDefinition) {
+export function getFunctionDefinition(node: FunctionDefinition) {
   let value = `function ${node.name}(`;
   value += node.parameters.parameters
     .map((param: any) => getVariableDeclaration(param))
@@ -112,6 +112,10 @@ function getFunctionDefinition(node: FunctionDefinition) {
 
   if (node.stateMutability != "nonpayable") {
     value += ` ${node.stateMutability}`;
+  }
+
+  if (node.virtual) {
+    value += " virtual";
   }
 
   if (node.returnParameters.parameters.length) {
@@ -125,7 +129,7 @@ function getFunctionDefinition(node: FunctionDefinition) {
   return value;
 }
 
-function getContractDefinition(node: ContractDefinition) {
+export function getContractDefinition(node: ContractDefinition) {
   let value = `contract ${node.name}(`;
   const constructor = <FunctionDefinition>Reflect.get(node, "constructor");
   if (constructor) {
