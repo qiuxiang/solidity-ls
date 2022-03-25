@@ -1,9 +1,12 @@
 import { ContractDefinition, Identifier } from "solidity-ast";
+import { setFlagsFromString } from "v8";
 import {
   CompletionItem,
   CompletionItemKind,
   CompletionParams,
   CompletionTriggerKind,
+  InsertTextFormat,
+  InsertTextMode,
 } from "vscode-languageserver";
 import { solidityMap } from "..";
 import { getDefinitionInfo } from "../hover";
@@ -111,6 +114,13 @@ function createCompletionItem(node: DefinitionNode) {
   item.kind = kindMap.get(node.nodeType);
   item.documentation = Reflect.get(node, "documentation")?.text;
   item.detail = getDefinitionInfo(node);
+  if (node.nodeType == "FunctionDefinition") {
+    const params = node.parameters.parameters
+      .map((i, index) => `\${${index + 1}:${i.name}}`)
+      .join(", ");
+    item.insertText = `${node.name}(${params})`;
+    item.insertTextFormat = InsertTextFormat.Snippet;
+  }
   return item;
 }
 
