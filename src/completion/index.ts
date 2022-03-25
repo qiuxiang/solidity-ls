@@ -11,14 +11,14 @@ import { DefinitionNode } from "../parse";
 import { Solidity } from "../solidity";
 import * as completions from "./completions";
 
-let items = <CompletionItem[]>[];
+let completionitems = <CompletionItem[]>[];
 
 export async function onCompletion({
   textDocument,
   position,
   context,
 }: CompletionParams) {
-  items = [];
+  completionitems = [];
   position.character -= 1;
   const solidity = solidityMap.get(textDocument.uri);
   if (!solidity) return null;
@@ -31,7 +31,7 @@ export async function onCompletion({
     ) {
       const nodeId = (<Identifier>node.expression).referencedDeclaration!;
       addCompletionItems(solidity, nodeId);
-      return items;
+      return completionitems;
     }
   }
 
@@ -39,13 +39,17 @@ export async function onCompletion({
     const { typeString, typeIdentifier } = (<Identifier>node)?.typeDescriptions;
     if (!typeString || !typeIdentifier) return [];
 
-    items = items.concat(completionsMap.get(typeString) ?? []);
+    completionitems = completionitems.concat(
+      completionsMap.get(typeString) ?? []
+    );
     if (node.nodeType == "ElementaryTypeNameExpression") {
-      items = items.concat(completionsMap.get(node.typeName.name) ?? []);
+      completionitems = completionitems.concat(
+        completionsMap.get(node.typeName.name) ?? []
+      );
     }
 
     if (typeIdentifier.startsWith("t_array")) {
-      items = items.concat(completions.array);
+      completionitems = completionitems.concat(completions.array);
     } else {
       // user defined type completion
       const match = typeIdentifier.match(/\$(\d+)/);
@@ -62,7 +66,7 @@ export async function onCompletion({
       }
     }
   } else {
-    items = [
+    completionitems = [
       ...completions.globalSymbol,
       ...completions.elementaryType,
       ...completions.keyword,
@@ -88,24 +92,21 @@ export async function onCompletion({
     // contracts completion
     for (const node of solidity.definitions) {
       if (node.nodeType == "ContractDefinition") {
-        items.push(createCompletionItem(node));
+        completionitems.push(createCompletionItem(node));
       }
     }
   }
-  return items;
+  return completionitems;
 }
 
 function addCompletionItems(solidity: Solidity, nodeId: number) {
   for (const node of solidity.getAccesableNodes(nodeId)) {
-    items.push(createCompletionItem(node));
+    completionitems.push(createCompletionItem(node));
   }
 }
 
 function createCompletionItem(node: DefinitionNode) {
   let { name } = node;
-  if (node.nodeType == "FunctionDefinition") {
-    name = name += "()";
-  }
   const item = CompletionItem.create(name);
   item.kind = kindMap.get(node.nodeType);
   item.documentation = Reflect.get(node, "documentation")?.text;

@@ -13,6 +13,7 @@ import { onFormatting } from "./formatting";
 import { onHover } from "./hover";
 import { onReferences } from "./references";
 import { onRename } from "./rename";
+import { onSignatureHelp } from "./signature-help";
 import { Solidity } from "./solidity";
 
 export let options = {
@@ -42,6 +43,7 @@ export function createServer(
   connection.onCompletion(onCompletion);
   connection.onRenameRequest(onRename);
   connection.onReferences(onReferences);
+  connection.onSignatureHelp(onSignatureHelp);
 
   connection.onDidChangeConfiguration(({ settings }) => {
     options = settings.solidity;
@@ -58,6 +60,7 @@ export function createServer(
         completionProvider: { triggerCharacters: ["."] },
         renameProvider: true,
         referencesProvider: true,
+        signatureHelpProvider: { triggerCharacters: ["("] },
       },
     };
   });
