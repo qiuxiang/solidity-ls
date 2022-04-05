@@ -4,6 +4,7 @@ import {
   Connection,
   createConnection,
   TextDocuments,
+  WorkspaceFolder,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import { compile } from "./compile";
@@ -50,7 +51,10 @@ export function createServer(
   });
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
-    rootPath = URI.parse(workspaceFolders![0].uri).path;
+    const uri = workspaceFolders?.[0]?.uri;
+    if (uri) {
+      rootPath = URI.parse(uri).path;
+    }
     extensionPath = initializationOptions.extensionPath;
     return {
       capabilities: {
