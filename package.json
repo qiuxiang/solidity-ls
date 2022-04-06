@@ -11,7 +11,7 @@
     "dist/index.js"
   ],
   "bin": {
-    "solidity-ls": "dist/index.js"
+    "solidity-ls": "bin/solidity-ls.js"
   },
   "dependencies": {
     "prettier": "^2.5.1",
