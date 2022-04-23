@@ -18,7 +18,14 @@ export function compile(document: TextDocument): SourceUnit[] {
     settings: { outputSelection: { "*": { "": ["ast"] } } },
   };
   const { remapping } = options;
-  const output = solc.compile(JSON.stringify(input), {
+  // Dynamically bind solc version based on project's dependency
+  let solcLocal;
+  try {
+    solcLocal = solc.setupMethods(require(rootPath + "/node_modules/solc/soljson.js"));
+  } catch (_) {
+    solcLocal = solc;
+  }
+  const output = solcLocal.compile(JSON.stringify(input), {
     import(path: string) {
       try {
         let absolutePath = path;
