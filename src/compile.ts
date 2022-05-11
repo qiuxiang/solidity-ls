@@ -58,10 +58,10 @@ export function compile(document: TextDocument): Promise<any> {
 
 function getFilename(document: TextDocument): string {
   const uri = decodeURIComponent(document.uri);
-  if (uri.indexOf(rootPath)) {
-    return uri.replace(`file://${rootPath}/`, "");
-  } else {
+  if (uri.indexOf(rootPath) == -1) {
     return uri.replace(new RegExp(`.*${options.includePath}/`), "");
+  } else {
+    return uri.replace(`file://${rootPath}/`, "");
   }
 }
 
@@ -86,6 +86,9 @@ export function getAbsoluteUri(path: string) {
 }
 
 export function showErrors(document: TextDocument, errors: any[]) {
+  errors = errors.filter(
+    (i) => document.uri.indexOf(i.sourceLocation.file) != -1
+  );
   const diagnostics: Diagnostic[] = [];
   for (const error of errors) {
     const { start = 0, end = 0 } = error.sourceLocation ?? {};
