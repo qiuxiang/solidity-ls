@@ -1,5 +1,6 @@
 import { join } from "path/posix";
 import { Duplex } from "stream";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   CompletionRequest,
   CompletionTriggerKind,
@@ -84,7 +85,7 @@ describe("server", () => {
   });
 
   it("hover", async () => {
-    openTextDocument("ballot.sol");
+    await openTextDocument("ballot.sol");
     const { contents } = (await client.sendRequest(HoverRequest.type, {
       textDocument: { uri: getTestContractUri("ballot.sol") },
       position: { line: 33, character: 9 },
@@ -98,9 +99,9 @@ describe("server", () => {
   });
 
   it("format", async () => {
-    const document = openTextDocument("unformatted.sol");
+    const { uri } = await openTextDocument("unformatted.sol");
     const result = await client.sendRequest(DocumentFormattingRequest.type, {
-      textDocument: { uri: document.uri },
+      textDocument: { uri },
       options: FormattingOptions.create(2, true),
     });
     expect(result?.[0].newText).toEqual(
@@ -109,9 +110,9 @@ describe("server", () => {
   });
 
   it("completion", async () => {
-    const document = openTextDocument("erc20.sol");
+    const { uri } = await openTextDocument("erc20.sol");
     const result = await client.sendRequest(CompletionRequest.type, {
-      textDocument: { uri: document.uri },
+      textDocument: { uri },
       position: { line: 7, character: 5 },
       context: { triggerKind: CompletionTriggerKind.Invoked },
     });
@@ -119,11 +120,19 @@ describe("server", () => {
   });
 
   function openTextDocument(name: string) {
-    const document = getTestContract(name);
-    const text = document.getText();
-    client.sendNotification(DidOpenTextDocumentNotification.type, {
-      textDocument: TextDocumentItem.create(document.uri, "solidity", 0, text),
+    return new Promise<TextDocument>((resolve) => {
+      const document = getTestContract(name);
+      client.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: TextDocumentItem.create(
+          document.uri,
+          "solidity",
+          0,
+          document.getText()
+        ),
+      });
+      client.onNotification(DidOpenTextDocumentNotification.type, () => {
+        resolve(document);
+      });
     });
-    return document;
   }
 });

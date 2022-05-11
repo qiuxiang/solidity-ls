@@ -3,6 +3,8 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Connection,
   createConnection,
+  DidOpenTextDocumentNotification,
+  TextDocumentItem,
   TextDocuments,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
@@ -75,8 +77,11 @@ export function createServer(
     const result = await compile(document);
     if (result.length) {
       solidityMap.set(document.uri, new Solidity(document, result));
+      connection.sendNotification(DidOpenTextDocumentNotification.type, {
+        textDocument: TextDocumentItem.create(document.uri, "", 0, ""),
+      });
     }
-    setTimeout(() => require("prettier"), 0);
+    require("prettier");
   });
 
   connection.listen();
