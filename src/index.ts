@@ -4,7 +4,6 @@ import {
   Connection,
   createConnection,
   TextDocuments,
-  WorkspaceFolder,
 } from "vscode-languageserver/node";
 import { URI } from "vscode-uri";
 import { compile } from "./compile";
@@ -72,8 +71,8 @@ export function createServer(
   documents = new TextDocuments(TextDocument);
   documents.listen(connection);
 
-  documents.onDidChangeContent(({ document }) => {
-    const result = compile(document);
+  documents.onDidChangeContent(async ({ document }) => {
+    const result = await compile(document);
     if (result.length) {
       solidityMap.set(document.uri, new Solidity(document, result));
     }

@@ -61,7 +61,7 @@ export type IdentifierNode = (
 ) &
   ASTNodeData;
 
-export function parse(
+export function parseAST(
   node: ASTNode,
   root: ASTNode,
   identifiers: ASTNode[],
@@ -192,7 +192,7 @@ export function parse(
   for (const child of children) {
     if (!child) continue;
     child.parent = node;
-    parse(child, root, identifiers, definitions, scopes, nodes, nodeMap);
+    parseAST(child, root, identifiers, definitions, scopes, nodes, nodeMap);
   }
 }
 

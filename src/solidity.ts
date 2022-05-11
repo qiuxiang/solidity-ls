@@ -6,7 +6,7 @@ import {
   DefinitionNode,
   IdentifierNode,
   ImportNode,
-  parse,
+  parseAST,
 } from "./parse";
 
 export class Solidity {
@@ -26,7 +26,7 @@ export class Solidity {
       if (!this.nodes.has(uri)) {
         this.nodes.set(uri, []);
       }
-      parse(
+      parseAST(
         root,
         root,
         this.identifiers,

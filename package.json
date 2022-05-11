@@ -4,8 +4,8 @@
   "main": "dist/index.js",
   "scripts": {
     "esbuild": "esbuild --sourcemap --platform=node --bundle --external:sol* --external:vscode* --external:prettier* --outdir=dist",
-    "test": "npm run esbuild test/test.ts && node --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js",
-    "build": "npm run esbuild src/index.ts --"
+    "test": "npm run esbuild test/test.ts && node --inspect --enable-source-maps node_modules/jasmine/bin/jasmine.js dist/test.js",
+    "build": "npm run esbuild src/index.ts"
   },
   "files": [
     "dist/index.js"
@@ -14,9 +14,9 @@
     "solidity-ls": "bin/solidity-ls.js"
   },
   "dependencies": {
+    "antlr4-solidity": "^0.0.1",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solc": "^0.8.12",
     "solidity-ast": "^0.4.30",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.4",

@@ -1,58 +1,68 @@
-import { accessSync, existsSync, readFileSync } from "fs";
+import { getStandardJsonInput } from "antlr4-solidity";
+import { spawn } from "child_process";
+import { accessSync } from "fs";
 import { join } from "path";
-// @ts-ignore
-import solc from "solc";
 import { SourceUnit } from "solidity-ast";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   Diagnostic,
   DiagnosticSeverity,
+  MessageType,
   Range,
+  ShowMessageRequest,
 } from "vscode-languageserver/node";
 import { connection, options, pathMap, rootPath } from ".";
 
-export function compile(document: TextDocument): SourceUnit[] {
-  const input = {
-    language: "Solidity",
-    sources: { [document.uri]: { content: document.getText() } },
-    settings: { outputSelection: { "*": { "": ["ast"] } } },
-  };
-  const { remapping } = options;
-  const output = solc.compile(JSON.stringify(input), {
-    import(path: string) {
-      try {
-        let absolutePath = path;
-        if (path.startsWith("file://")) {
-          absolutePath = decodeURIComponent(path.substring(7));
-        } else {
-          absolutePath = getAbsolutePath(path);
-          if (!existsSync(absolutePath)) {
-            for (const key in remapping) {
-              if (path.startsWith(key)) {
-                absolutePath = getAbsolutePath(
-                  path.replace(key, remapping[key])
-                );
-                break;
-              }
-            }
-          }
-        }
-        pathMap[path] = absolutePath;
-        return { contents: readFileSync(absolutePath).toString() };
-      } catch ({ message }) {
-        return { error: message };
-      }
-    },
-  });
-  const { sources = {}, errors = [] } = JSON.parse(output);
-  showErrors(document, errors);
-  return Object.values(sources).map((i: any) => {
-    const ast = <SourceUnit>i.ast;
-    ast.absolutePath = getAbsolutePath(
-      pathMap[ast.absolutePath] ?? ast.absolutePath
+export function compile(document: TextDocument): Promise<any> {
+  return new Promise((resolve) => {
+    const child = spawn("solc", ["--standard-json"]);
+
+    let stdout = "";
+    child.stdout.on("data", (buffer) => (stdout += buffer.toString()));
+    child.stdout.on("end", () => {
+      const { sources = {}, errors = [] } = JSON.parse(stdout);
+      showErrors(document, errors);
+      resolve(
+        Object.values(sources).map((i: any) => {
+          const ast = <SourceUnit>i.ast;
+          ast.absolutePath = getAbsolutePath(
+            pathMap[ast.absolutePath] ?? ast.absolutePath
+          );
+          return ast;
+        })
+      );
+    });
+
+    child.on("error", ({ message }) => {
+      connection?.sendRequest(ShowMessageRequest.type, {
+        type: MessageType.Error,
+        message,
+      });
+    });
+
+    const filename = getFilename(document);
+    const input = getStandardJsonInput(filename, document.getText(), {
+      ...options,
+      basePath: rootPath,
+    });
+    child.stdin.write(
+      JSON.stringify({
+        language: "Solidity",
+        sources: input.sources,
+        settings: { outputSelection: { "*": { "": ["ast"] } } },
+      })
     );
-    return ast;
+    child.stdin.end();
   });
+}
+
+function getFilename(document: TextDocument): string {
+  const uri = decodeURIComponent(document.uri);
+  if (uri.indexOf(rootPath)) {
+    return uri.replace(`file://${rootPath}/`, "");
+  } else {
+    return uri.replace(new RegExp(`.*${options.includePath}/`), "");
+  }
 }
 
 export function getAbsolutePath(path: string) {
