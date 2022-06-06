@@ -69,3 +69,25 @@ msg.;
 ```
 npx solidity-ls --stdio
 ```
+
+### coc.nvim
+
+```
+:CocInstall coc-solidity
+```
+
+### neovim lsp
+
+```lua
+local lspconfig = require 'lspconfig'
+local configs = require 'lspconfig.configs'
+configs.solidity = {
+  default_config = {
+    cmd = { 'solidity-ls', '--stdio' },
+    filetypes = { 'solidity' },
+    root_dir = lspconfig.util.find_git_ancestor,
+    single_file_support = true,
+  },
+}
+lspconfig.solidity.setup {}
+```
