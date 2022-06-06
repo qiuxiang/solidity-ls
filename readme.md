@@ -67,6 +67,13 @@ msg.;
 ## Usage
 
 ```
+npm i solidity-ls -g
+solidity-ls --stdio
+```
+
+or
+
+```
 npx solidity-ls --stdio
 ```
 
