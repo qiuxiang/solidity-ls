@@ -48,7 +48,7 @@ export function createServer(
   connection.onSignatureHelp(onSignatureHelp);
 
   connection.onDidChangeConfiguration(({ settings }) => {
-    options = settings.solidity;
+    options = Object.assign(options, settings.solidity)
   });
 
   connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
