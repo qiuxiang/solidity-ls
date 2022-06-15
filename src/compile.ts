@@ -1,4 +1,3 @@
-import { getStandardJsonInput } from "antlr4-solidity";
 import { spawn } from "child_process";
 import { accessSync } from "fs";
 import { join } from "path";
@@ -11,11 +10,17 @@ import {
   Range,
   ShowMessageRequest,
 } from "vscode-languageserver/node";
-import { connection, options, pathMap, rootPath } from ".";
+import { connection, options, rootPath } from ".";
 
 export function compile(document: TextDocument): Promise<any> {
   return new Promise((resolve) => {
-    const child = spawn("solc", ["--standard-json"]);
+    const child = spawn("solc", [
+      "--standard-json",
+      "--base-path",
+      rootPath,
+      "--include-path",
+      options.includePath,
+    ]);
 
     let stdout = "";
     child.stdout.on("data", (buffer) => (stdout += buffer.toString()));
@@ -25,9 +30,7 @@ export function compile(document: TextDocument): Promise<any> {
       resolve(
         Object.values(sources).map((i: any) => {
           const ast = <SourceUnit>i.ast;
-          ast.absolutePath = getAbsolutePath(
-            pathMap[ast.absolutePath] ?? ast.absolutePath
-          );
+          ast.absolutePath = getAbsolutePath(ast.absolutePath);
           return ast;
         })
       );
@@ -41,15 +44,14 @@ export function compile(document: TextDocument): Promise<any> {
     });
 
     const filename = getFilename(document);
-    const input = getStandardJsonInput(filename, document.getText(), {
-      ...options,
-      basePath: rootPath,
-    });
+    const remappings = Object.keys(options.remapping).map(
+      (key) => `${key}=${options.remapping[key]}`
+    );
     child.stdin.write(
       JSON.stringify({
         language: "Solidity",
-        sources: input.sources,
-        settings: { outputSelection: { "*": { "": ["ast"] } } },
+        sources: { [filename]: { urls: [filename] } },
+        settings: { remappings, outputSelection: { "*": { "": ["ast"] } } },
       })
     );
     child.stdin.end();

@@ -1,3 +1,4 @@
+import { readFile, realpathSync } from "fs";
 import { join } from "path";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
@@ -18,16 +19,14 @@ import { onRename } from "./rename";
 import { onSignatureHelp } from "./signature-help";
 import { Solidity } from "./solidity";
 
-export let options = {
+export const options = {
   includePath: "node_modules",
   remapping: <Record<string, string>>{},
 };
-export let rootPath = join(__dirname, "..");
-export let extensionPath: string;
+export let rootPath = realpathSync(".");
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
 export const solidityMap = new Map<string, Solidity>();
-export const pathMap: Record<string, string> = {};
 
 export function createServer(
   input?: NodeJS.ReadableStream,
@@ -47,16 +46,22 @@ export function createServer(
   connection.onReferences(onReferences);
   connection.onSignatureHelp(onSignatureHelp);
 
-  connection.onDidChangeConfiguration(({ settings }) => {
-    options = Object.assign(options, settings.solidity)
+  connection.onDidChangeConfiguration(({ settings: { solidity } }) => {
+    const { includePath, remapping } = solidity ?? {};
+    if (includePath) {
+      options.includePath = includePath;
+    }
+    if (remapping) {
+      options.remapping = Object.assign(options.remapping, remapping);
+    }
   });
 
-  connection.onInitialize(({ workspaceFolders, initializationOptions }) => {
+  connection.onInitialize(({ workspaceFolders }) => {
     const uri = workspaceFolders?.[0]?.uri;
     if (uri) {
       rootPath = URI.parse(uri).path;
+      loadingRemappingsFile();
     }
-    extensionPath = initializationOptions.extensionPath;
     return {
       capabilities: {
         hoverProvider: true,
@@ -81,11 +86,29 @@ export function createServer(
         textDocument: TextDocumentItem.create(document.uri, "", 0, ""),
       });
     }
+    // lazy load
     require("prettier");
   });
 
   connection.listen();
   return connection;
+}
+
+function loadingRemappingsFile() {
+  const remappingsFile = join(rootPath, "remappings.txt");
+  readFile(remappingsFile, null, (err, data) => {
+    if (!err) {
+      data
+        .toString()
+        .split("\n")
+        .forEach((line) => {
+          const [key, value] = line.split("=");
+          if (key && value) {
+            options.remapping[key] = value;
+          }
+        });
+    }
+  });
 }
 
 if (require.main == module) {

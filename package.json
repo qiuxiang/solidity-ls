@@ -14,20 +14,19 @@
     "solidity-ls": "bin/solidity-ls.js"
   },
   "dependencies": {
-    "antlr4-solidity": "^0.0.1",
-    "prettier": "^2.5.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solidity-ast": "^0.4.30",
-    "vscode-languageserver": "^7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.4",
+    "prettier": "^2.7.0",
+    "prettier-plugin-solidity": "1.0.0-beta.19",
+    "solidity-ast": "^0.4.34",
+    "vscode-languageserver": "^8.0.1",
+    "vscode-languageserver-textdocument": "^1.0.5",
     "vscode-uri": "^3.0.3"
   },
   "devDependencies": {
-    "@openzeppelin/contracts": "^4.5.0",
-    "@types/jasmine": "^3.10.3",
-    "@types/node": "^17.0.21",
-    "@types/prettier": "^2.4.4",
-    "jasmine": "^4.0.2"
+    "@openzeppelin/contracts": "^4.6.0",
+    "@types/jasmine": "^4.0.3",
+    "@types/node": "^17.0.43",
+    "@types/prettier": "^2.6.3",
+    "jasmine": "^4.2.0"
   },
   "prettier": {
     "tabWidth": 2

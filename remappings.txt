@@ -1,0 +1,1 @@
+@remapping=test/contracts/remapping

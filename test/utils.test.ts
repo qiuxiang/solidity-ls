@@ -5,7 +5,7 @@ import { getTestContract } from "./utils";
 describe("utils", () => {
   it("compile()", async () => {
     console.log(await compile(getTestContract("with-error.sol")));
-    // await compile(getTestContract("with-error.sol"));
+    // console.log(await compile(getTestContract("erc20.sol")));
   });
 
   it("parseAst()", async () => {
