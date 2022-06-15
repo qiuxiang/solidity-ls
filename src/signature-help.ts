@@ -32,9 +32,5 @@ export function onSignatureHelp({
     })),
     activeParameter: 0,
   };
-  return {
-    signatures: [signature],
-    activeParameter: null,
-    activeSignature: null,
-  };
+  return { signatures: [signature] };
 }
