@@ -11,7 +11,7 @@ Means that some features will only work if sources are no syntax error.
 For example:
 
 ```solidity
-// should not work
+// should not work, because of missing semicolon
 msg.
    ^
 
