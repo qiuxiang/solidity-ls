@@ -25,15 +25,19 @@ export function compile(document: TextDocument): Promise<any> {
     let stdout = "";
     child.stdout.on("data", (buffer) => (stdout += buffer.toString()));
     child.stdout.on("end", () => {
-      const { sources = {}, errors = [] } = JSON.parse(stdout);
-      showErrors(document, errors);
-      resolve(
-        Object.values(sources).map((i: any) => {
-          const ast = <SourceUnit>i.ast;
-          ast.absolutePath = getAbsolutePath(ast.absolutePath);
-          return ast;
-        })
-      );
+      try {
+        const { sources = {}, errors = [] } = JSON.parse(stdout);
+        showErrors(document, errors);
+        resolve(
+          Object.values(sources).map((i: any) => {
+            const ast = <SourceUnit>i.ast;
+            ast.absolutePath = getAbsolutePath(ast.absolutePath);
+            return ast;
+          })
+        );
+      } catch (_) {
+        resolve([]);
+      }
     });
 
     child.on("error", ({ message }) => {
