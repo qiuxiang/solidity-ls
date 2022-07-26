@@ -54,7 +54,7 @@ export function compile(document: TextDocument): Promise<any> {
     child.stdin.write(
       JSON.stringify({
         language: "Solidity",
-        sources: { [filename]: { urls: [filename] } },
+        sources: { [filename]: { content: document.getText() } },
         settings: { remappings, outputSelection: { "*": { "": ["ast"] } } },
       })
     );
