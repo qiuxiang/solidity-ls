@@ -92,7 +92,7 @@ configs.solidity = {
   default_config = {
     cmd = { 'solidity-ls', '--stdio' },
     filetypes = { 'solidity' },
-    root_dir = lspconfig.util.find_git_ancestor,
+    root_dir = lspconfig.util.root_pattern('package.json', '.git'),
     single_file_support = true,
   },
 }
