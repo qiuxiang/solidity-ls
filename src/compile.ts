@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { accessSync } from "fs";
+import { accessSync, realpathSync } from "fs";
 import { join } from "path";
 import { SourceUnit } from "solidity-ast";
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -81,7 +81,12 @@ export function getAbsolutePath(path: string) {
   try {
     accessSync(absolutePath);
   } catch (_) {
-    absolutePath = join(includePath, path);
+    try {
+      absolutePath = join(realpathSync("."), options.includePath, path)
+      accessSync(absolutePath);
+    } catch (_) {
+      absolutePath = join(includePath, path);
+    }
   }
   return absolutePath;
 }
