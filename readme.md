@@ -85,16 +85,15 @@ npx solidity-ls --stdio
 
 ### neovim lsp
 
+More info: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#solidity
+
 ```lua
 local lspconfig = require 'lspconfig'
-local configs = require 'lspconfig.configs'
-configs.solidity = {
-  default_config = {
-    cmd = { 'solidity-ls', '--stdio' },
-    filetypes = { 'solidity' },
-    root_dir = lspconfig.util.root_pattern('package.json', '.git'),
-    single_file_support = true,
+lspconfig.solidity.setup({
+  -- on_attach = on_attach, -- probably you will need this.
+  -- capabilities = capabilities,
+  settings = {
+    solidity = { includePath = '', remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' } } -- example of remapping
   },
-}
-lspconfig.solidity.setup {}
+})
 ```
