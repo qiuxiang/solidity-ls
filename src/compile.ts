@@ -76,7 +76,9 @@ export function getAbsolutePath(path: string) {
   if (path.startsWith("file://")) {
     return decodeURIComponent(path.substring(7));
   }
-  const includePath = join(rootPath, options.includePath);
+  const includePath = options.includePath.startsWith("/")
+    ? options.includePath
+    : join(rootPath, options.includePath);
   let absolutePath = join(rootPath, path);
   try {
     accessSync(absolutePath);
