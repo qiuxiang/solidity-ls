@@ -93,7 +93,8 @@ lspconfig.solidity.setup({
   -- on_attach = on_attach, -- probably you will need this.
   -- capabilities = capabilities,
   settings = {
-    solidity = { includePath = '', remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' } } -- example of remapping
+    -- example of global remapping
+    solidity = { includePath = '', remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' } }
   },
 })
 ```
