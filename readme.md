@@ -98,3 +98,7 @@ lspconfig.solidity.setup({
   },
 })
 ```
+
+### foundry supports
+
+run `forge remappings > remappings.txt` in project root.
