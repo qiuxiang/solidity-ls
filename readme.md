@@ -5,11 +5,8 @@
 
 <img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159026514-4d178c66-336c-46c3-b647-37d8ed048568.png"><img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159026797-af4de669-49ff-4036-b6b0-0ea42a68a019.png"><img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159030410-65a68fe6-bc77-45e2-aa8a-b305fbb01b17.png">
 
-<details>
-  <p><summary>
-    <del>This language server has no error tolerance.
-Means that some features will only work if sources are no syntax error.</del> (The new version of solc already has much better error tolerance)
-  </summary></p>
+This language server has no error tolerance.
+Means that some features will only work if sources are no syntax error.
 
 For example:
 
@@ -22,7 +19,6 @@ msg.
 msg.;
    ^
 ```
-</details>
 
 # Features
 
