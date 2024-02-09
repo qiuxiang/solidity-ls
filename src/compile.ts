@@ -20,6 +20,8 @@ export function compile(document: TextDocument): Promise<any> {
       rootPath,
       "--include-path",
       options.includePath,
+      "--allow-paths",
+      options.allowPaths.join(","),
     ]);
 
     let stdout = "";

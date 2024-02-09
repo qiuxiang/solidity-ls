@@ -5,13 +5,13 @@
 
 <img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159026514-4d178c66-336c-46c3-b647-37d8ed048568.png"><img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159026797-af4de669-49ff-4036-b6b0-0ea42a68a019.png"><img width="276" alt="image" src="https://user-images.githubusercontent.com/1709072/159030410-65a68fe6-bc77-45e2-aa8a-b305fbb01b17.png">
 
-**This language server has no tolerance.**
+This language server has no error tolerance.
 Means that some features will only work if sources are no syntax error.
 
 For example:
 
 ```solidity
-// completion not working due to missing semicolon
+// should not work
 msg.
    ^
 
@@ -85,16 +85,25 @@ npx solidity-ls --stdio
 
 ### neovim lsp
 
+More info: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#solidity
+
 ```lua
 local lspconfig = require 'lspconfig'
-local configs = require 'lspconfig.configs'
-configs.solidity = {
-  default_config = {
-    cmd = { 'solidity-ls', '--stdio' },
-    filetypes = { 'solidity' },
-    root_dir = lspconfig.util.find_git_ancestor,
-    single_file_support = true,
+lspconfig.solidity.setup({
+  -- on_attach = on_attach, -- probably you will need this.
+  -- capabilities = capabilities,
+  settings = {
+    -- example of global remapping
+    solidity = {
+        includePath = '',
+        remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' },
+        -- Array of paths to pass as --allow-paths to solc
+        allowPaths = {}
+    }
   },
-}
-lspconfig.solidity.setup {}
+})
 ```
+
+### foundry supports
+
+run `forge remappings > remappings.txt` in project root.
