@@ -19,11 +19,14 @@ import { onRename } from "./rename";
 import { onSignatureHelp } from "./signature-help";
 import { Solidity } from "./solidity";
 
+export let rootPath = realpathSync(".");
+
 export const options = {
   includePath: "node_modules",
   remapping: <Record<string, string>>{},
+  allowPaths: [rootPath],
 };
-export let rootPath = realpathSync(".");
+
 export let connection: Connection;
 export let documents: TextDocuments<TextDocument>;
 export const solidityMap = new Map<string, Solidity>();
@@ -47,12 +50,15 @@ export function createServer(
   connection.onSignatureHelp(onSignatureHelp);
 
   connection.onDidChangeConfiguration(({ settings: { solidity } }) => {
-    const { includePath, remapping } = solidity ?? {};
+    const { includePath, remapping, allowPaths } = solidity ?? {};
     if (includePath) {
       options.includePath = includePath;
     }
     if (remapping) {
       options.remapping = Object.assign(options.remapping, remapping);
+    }
+    if (allowPaths && Array.isArray(allowPaths)) {
+      options.allowPaths = options.allowPaths.concat(allowPaths);
     }
   });
 

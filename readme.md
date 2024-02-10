@@ -94,7 +94,12 @@ lspconfig.solidity.setup({
   -- capabilities = capabilities,
   settings = {
     -- example of global remapping
-    solidity = { includePath = '', remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' } }
+    solidity = {
+        includePath = '',
+        remapping = { ["@OpenZeppelin/"] = 'OpenZeppelin/openzeppelin-contracts@4.6.0/' },
+        -- Array of paths to pass as --allow-paths to solc
+        allowPaths = {}
+    }
   },
 })
 ```
